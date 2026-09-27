@@ -24,7 +24,10 @@ st.set_page_config(
 )
 
 st.title("Comité multiagente explicable sobre QQQ")
-st.caption("Validación walk-forward 2020-2022. El período final 2023-2024 permanece sin consultar.")
+st.caption(
+    "Validación walk-forward 2020-2022 y test final 2023-2024, abierto una sola vez después "
+    "de congelar la especificación."
+)
 
 try:
     artifacts = load_dashboard_artifacts(ROOT / "artifacts")
@@ -38,6 +41,88 @@ except FileNotFoundError as error:
         language="bash",
     )
     st.stop()
+
+equity_names = {
+    "hybrid_multiagent": "Multiagente híbrido",
+    "multiagent": "Multiagente cuantitativo",
+    "buy_and_hold": "Buy & hold",
+    "sma_50_200": "Medias 50/200",
+    "single_logistic_agent": "Agente logístico único",
+}
+
+if (
+    artifacts.final_quantitative_metrics is not None
+    and artifacts.final_quantitative_equity is not None
+):
+    final_quantitative = artifacts.final_quantitative_metrics["quantitative_multiagent"]
+    final_strategy = (
+        artifacts.final_hybrid_metrics["hybrid_multiagent"]
+        if artifacts.final_hybrid_metrics is not None
+        else final_quantitative
+    )
+    st.subheader("Test final fuera de muestra · 2023-2024")
+    final_columns = st.columns(5)
+    final_columns[0].metric(
+        "Rentabilidad anualizada", percentage(final_strategy["annualized_return"])
+    )
+    final_columns[1].metric("Sharpe", f"{final_strategy['sharpe_ratio']:.2f}")
+    final_columns[2].metric("Máximo drawdown", percentage(final_strategy["maximum_drawdown"]))
+    final_columns[3].metric("Exposición", percentage(final_strategy["market_exposure"]))
+    final_columns[4].metric(
+        "Coste LLM estimado",
+        (
+            f"${artifacts.final_hybrid_metrics['llm_estimated_cost_usd']:.3f}"
+            if artifacts.final_hybrid_metrics is not None
+            else "No ejecutado"
+        ),
+    )
+
+    final_equity = artifacts.final_quantitative_equity.copy()
+    if artifacts.final_hybrid_strategy is not None:
+        final_equity["hybrid_multiagent"] = artifacts.final_hybrid_strategy["equity"]
+    final_equity_long = (
+        final_equity.rename_axis("date")
+        .reset_index()
+        .melt(id_vars="date", var_name="estrategia", value_name="capital_normalizado")
+    )
+    final_equity_long["estrategia"] = (
+        final_equity_long["estrategia"].map(equity_names).fillna(final_equity_long["estrategia"])
+    )
+    final_equity_figure = px.line(
+        final_equity_long,
+        x="date",
+        y="capital_normalizado",
+        color="estrategia",
+        labels={"date": "Fecha", "capital_normalizado": "Capital normalizado", "estrategia": ""},
+    )
+    final_equity_figure.update_layout(hovermode="x unified", legend_orientation="h")
+    st.plotly_chart(final_equity_figure, width="stretch")
+
+    with st.expander("Comparación final con baselines", expanded=True):
+        final_comparison = {"Multiagente cuantitativo": final_quantitative}
+        if artifacts.final_hybrid_metrics is not None:
+            final_comparison["Multiagente híbrido"] = final_strategy
+        for name, values in artifacts.final_quantitative_metrics["baselines"].items():
+            final_comparison[equity_names.get(name, name)] = values
+        final_comparison_frame = pd.DataFrame(final_comparison).T.loc[
+            :,
+            [
+                "annualized_return",
+                "annualized_volatility",
+                "sharpe_ratio",
+                "maximum_drawdown",
+                "market_exposure",
+                "position_changes",
+            ],
+        ]
+        st.dataframe(final_comparison_frame, width="stretch")
+        st.caption(
+            "El resultado se presenta sin reajuste posterior: el sistema multiagente redujo la "
+            "volatilidad frente a buy & hold y medias 50/200, pero obtuvo menor rentabilidad y "
+            "Sharpe."
+        )
+
+    st.divider()
 
 metrics = artifacts.metrics
 strategy_metrics = (
@@ -71,13 +156,6 @@ equity_long = (
     .reset_index()
     .melt(id_vars="date", var_name="estrategia", value_name="capital_normalizado")
 )
-equity_names = {
-    "hybrid_multiagent": "Multiagente híbrido",
-    "multiagent": "Multiagente",
-    "buy_and_hold": "Buy & hold",
-    "sma_50_200": "Medias 50/200",
-    "single_logistic_agent": "Agente logístico único",
-}
 equity_long["estrategia"] = (
     equity_long["estrategia"].map(equity_names).fillna(equity_long["estrategia"])
 )

@@ -10,9 +10,10 @@ reproducible de cada decision.
 
 ## Estado
 
-El repositorio se encuentra en la primera fase del MVP. La especificacion experimental esta
-congelada en [`docs/experiment_spec.md`](docs/experiment_spec.md) y se revisara antes de
-consultar el periodo final de prueba.
+El MVP esta implementado. La especificacion experimental se congelo antes de abrir una sola vez
+el test final 2023-2024. El estado de cumplimiento se resume en
+[`docs/mvp_status.md`](docs/mvp_status.md) y los resultados finales se documentan en
+[`docs/experiments/2026-09-27-final-test.md`](docs/experiments/2026-09-27-final-test.md).
 
 ## Principios de diseno
 
@@ -78,7 +79,7 @@ uv run qqq-agents hybrid-validation
 # Ejecutar la validacion LLM real solo tras aprobar payload y coste
 uv run qqq-agents hybrid-validation --provider openai
 
-# Abrir el test final exige confirmar que la especificacion esta congelada
+# Reproducir el test final exige confirmar que la especificacion esta congelada
 uv run qqq-agents final-quantitative --confirm-frozen-spec --with-shap
 uv run qqq-agents hybrid-final-test --confirm-frozen-spec --provider openai
 

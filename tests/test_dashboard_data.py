@@ -42,6 +42,24 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
     )
     pd.DataFrame({"action": ["HOLD"]}, index=index).to_csv(hybrid_dir / "decisions.csv")
     pd.DataFrame({"equity": [1.0]}, index=index).to_csv(hybrid_dir / "strategy.csv")
+    final_quantitative_dir = tmp_path / "final_quantitative"
+    final_quantitative_dir.mkdir()
+    (final_quantitative_dir / "final_test_metrics.json").write_text(
+        json.dumps({"quantitative_multiagent": {"sharpe_ratio": 0.9}}), encoding="utf-8"
+    )
+    pd.DataFrame({"action": ["HOLD"]}, index=index).to_csv(
+        final_quantitative_dir / "final_test_decisions.csv"
+    )
+    pd.DataFrame({"multiagent": [1.0]}, index=index).to_csv(
+        final_quantitative_dir / "final_test_equity.csv"
+    )
+    final_hybrid_dir = tmp_path / "hybrid_final_test"
+    final_hybrid_dir.mkdir()
+    (final_hybrid_dir / "metrics.json").write_text(
+        json.dumps({"hybrid_multiagent": {"sharpe_ratio": 0.9}}), encoding="utf-8"
+    )
+    pd.DataFrame({"action": ["HOLD"]}, index=index).to_csv(final_hybrid_dir / "decisions.csv")
+    pd.DataFrame({"equity": [1.0]}, index=index).to_csv(final_hybrid_dir / "strategy.csv")
 
     artifacts = load_dashboard_artifacts(tmp_path)
 
@@ -51,3 +69,6 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
     assert artifacts.llm_traces[pd.Timestamp("2022-01-07")]["mode"] == "deterministic_dry_run"
     assert artifacts.hybrid_metrics["hybrid_multiagent"]["sharpe_ratio"] == 1.1
     assert artifacts.hybrid_decisions.loc[pd.Timestamp("2022-01-07"), "action"] == "HOLD"
+    assert artifacts.final_quantitative_metrics["quantitative_multiagent"]["sharpe_ratio"] == 0.9
+    assert artifacts.final_hybrid_metrics["hybrid_multiagent"]["sharpe_ratio"] == 0.9
+    assert artifacts.final_hybrid_strategy.loc[pd.Timestamp("2022-01-07"), "equity"] == 1.0

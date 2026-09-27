@@ -20,6 +20,23 @@ class DashboardArtifacts:
     hybrid_metrics: dict[str, Any] | None
     hybrid_decisions: pd.DataFrame | None
     hybrid_strategy: pd.DataFrame | None
+    final_quantitative_metrics: dict[str, Any] | None
+    final_quantitative_decisions: pd.DataFrame | None
+    final_quantitative_equity: pd.DataFrame | None
+    final_hybrid_metrics: dict[str, Any] | None
+    final_hybrid_decisions: pd.DataFrame | None
+    final_hybrid_strategy: pd.DataFrame | None
+
+
+def _optional_bundle(
+    paths: dict[str, Path],
+) -> tuple[dict[str, Any] | None, pd.DataFrame | None, pd.DataFrame | None]:
+    if not all(path.exists() for path in paths.values()):
+        return None, None, None
+    metrics = json.loads(paths["metrics"].read_text(encoding="utf-8"))
+    decisions = pd.read_csv(paths["decisions"], index_col="date", parse_dates=["date"])
+    strategy = pd.read_csv(paths["strategy"], index_col="date", parse_dates=["date"])
+    return metrics, decisions.sort_index(), strategy.sort_index()
 
 
 def parse_attribution_cell(value: object) -> list[dict[str, Any]]:
@@ -64,21 +81,26 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         "decisions": hybrid_root / "decisions.csv",
         "strategy": hybrid_root / "strategy.csv",
     }
-    hybrid_available = all(path.exists() for path in hybrid_paths.values())
-    hybrid_metrics = (
-        json.loads(hybrid_paths["metrics"].read_text(encoding="utf-8"))
-        if hybrid_available
-        else None
-    )
-    hybrid_decisions = (
-        pd.read_csv(hybrid_paths["decisions"], index_col="date", parse_dates=["date"])
-        if hybrid_available
-        else None
-    )
-    hybrid_strategy = (
-        pd.read_csv(hybrid_paths["strategy"], index_col="date", parse_dates=["date"])
-        if hybrid_available
-        else None
+    hybrid_metrics, hybrid_decisions, hybrid_strategy = _optional_bundle(hybrid_paths)
+    final_quantitative_root = artifact_root / "final_quantitative"
+    final_quantitative_paths = {
+        "metrics": final_quantitative_root / "final_test_metrics.json",
+        "decisions": final_quantitative_root / "final_test_decisions.csv",
+        "strategy": final_quantitative_root / "final_test_equity.csv",
+    }
+    (
+        final_quantitative_metrics,
+        final_quantitative_decisions,
+        final_quantitative_equity,
+    ) = _optional_bundle(final_quantitative_paths)
+    final_hybrid_root = artifact_root / "hybrid_final_test"
+    final_hybrid_paths = {
+        "metrics": final_hybrid_root / "metrics.json",
+        "decisions": final_hybrid_root / "decisions.csv",
+        "strategy": final_hybrid_root / "strategy.csv",
+    }
+    final_hybrid_metrics, final_hybrid_decisions, final_hybrid_strategy = _optional_bundle(
+        final_hybrid_paths
     )
     return DashboardArtifacts(
         metrics=metrics,
@@ -87,6 +109,12 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         lime_cases=lime_cases,
         llm_traces=llm_traces,
         hybrid_metrics=hybrid_metrics,
-        hybrid_decisions=(hybrid_decisions.sort_index() if hybrid_decisions is not None else None),
-        hybrid_strategy=(hybrid_strategy.sort_index() if hybrid_strategy is not None else None),
+        hybrid_decisions=hybrid_decisions,
+        hybrid_strategy=hybrid_strategy,
+        final_quantitative_metrics=final_quantitative_metrics,
+        final_quantitative_decisions=final_quantitative_decisions,
+        final_quantitative_equity=final_quantitative_equity,
+        final_hybrid_metrics=final_hybrid_metrics,
+        final_hybrid_decisions=final_hybrid_decisions,
+        final_hybrid_strategy=final_hybrid_strategy,
     )
