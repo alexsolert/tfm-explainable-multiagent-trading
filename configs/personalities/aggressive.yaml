@@ -1,0 +1,7 @@
+name: aggressive
+signal_multiplier: 1.10
+confidence_floor: 0.50
+buy_threshold_delta: -0.08
+risk_weight_multiplier: 0.80
+risk_veto_probability_delta: 0.10
+

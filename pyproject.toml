@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qqq-agents"
+version = "0.1.0"
+description = "Framework multiagente jerarquico y explicable para trading long-only sobre QQQ"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+authors = [{ name = "Alex Soler Trias" }]
+dependencies = [
+  "joblib>=1.4",
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "pydantic>=2.10",
+  "pyyaml>=6.0",
+  "scikit-learn>=1.6",
+  "yfinance>=0.2.54",
+]
+
+[project.optional-dependencies]
+xai = [
+  "lime>=0.2.0.1",
+  "shap>=0.47",
+]
+llm = [
+  "autogen-agentchat>=0.7",
+  "autogen-ext[openai]>=0.7",
+  "openai>=1.68",
+]
+dashboard = [
+  "plotly>=6.0",
+  "streamlit>=1.43",
+]
+dev = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.11",
+]
+
+[project.scripts]
+qqq-agents = "qqq_agents.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qqq_agents"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+

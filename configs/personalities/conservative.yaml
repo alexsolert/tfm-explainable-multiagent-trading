@@ -1,0 +1,7 @@
+name: conservative
+signal_multiplier: 0.85
+confidence_floor: 0.60
+buy_threshold_delta: 0.10
+risk_weight_multiplier: 1.30
+risk_veto_probability_delta: -0.10
+

@@ -1,0 +1,63 @@
+project:
+  random_seed: 42
+  timezone: America/New_York
+
+data:
+  ticker: QQQ
+  start: "2015-01-01"
+  end: "2025-01-01"
+  raw_path: data/raw/qqq_daily.csv
+  processed_path: data/processed/qqq_features.csv
+  auto_adjust: true
+
+experiment:
+  decision_frequency: W-FRI
+  prediction_horizon_sessions: 5
+  train_start: "2015-01-01"
+  validation_start: "2020-01-01"
+  test_start: "2023-01-01"
+  test_end: "2024-12-31"
+  transaction_cost_bps: 10
+  initial_capital: 10000.0
+  risk_event_threshold: -0.03
+
+coordinator:
+  buy_threshold: 0.20
+  sell_threshold: -0.20
+  risk_veto_probability: 0.65
+  weights:
+    technical: 0.30
+    momentum: 0.25
+    risk: 0.25
+    market_context: 0.08
+    sentiment: 0.06
+    strategic_validator: 0.06
+
+models:
+  technical:
+    kind: random_forest_classifier
+    n_estimators: 300
+    max_depth: 6
+    min_samples_leaf: 12
+  momentum:
+    kind: random_forest_classifier
+    n_estimators: 300
+    max_depth: 6
+    min_samples_leaf: 12
+  risk:
+    kind: random_forest_classifier
+    n_estimators: 300
+    max_depth: 5
+    min_samples_leaf: 15
+  baseline:
+    kind: logistic_regression
+
+llm:
+  enabled: false
+  provider: openai
+  model: gpt-5.4-mini-2026-03-17
+  temperature: 0
+  max_output_tokens: 300
+  cache: true
+  budget_usd: 10.0
+

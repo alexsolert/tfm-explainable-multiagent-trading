@@ -1,0 +1,7 @@
+name: opportunistic
+signal_multiplier: 1.05
+confidence_floor: 0.52
+buy_threshold_delta: -0.04
+momentum_weight_multiplier: 1.30
+risk_veto_probability_delta: 0.05
+
