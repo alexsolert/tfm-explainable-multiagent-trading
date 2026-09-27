@@ -8,6 +8,7 @@ from qqq_agents.llm.providers import (
     AutoGenOpenAIClient,
     CachedLLMClient,
     EvidenceGatedLLMClient,
+    EvidenceValidatedLLMClient,
     MockLLMClient,
 )
 
@@ -16,6 +17,7 @@ __all__ = [
     "AutoGenOpenAIClient",
     "CachedLLMClient",
     "EvidenceGatedLLMClient",
+    "EvidenceValidatedLLMClient",
     "LLMCallResult",
     "LLMCommittee",
     "MarketContextPacket",

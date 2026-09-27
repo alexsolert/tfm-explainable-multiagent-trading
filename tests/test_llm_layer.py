@@ -9,6 +9,7 @@ from qqq_agents.config import load_config
 from qqq_agents.llm import (
     CachedLLMClient,
     EvidenceGatedLLMClient,
+    EvidenceValidatedLLMClient,
     LLMCommittee,
     MarketContextPacket,
     MockLLMClient,
@@ -90,6 +91,33 @@ def test_evidence_gate_skips_sentiment_model_without_headlines() -> None:
     assert results[1].model == "evidence-gate-v1"
     assert results[1].assessment.signal == 0.0
     assert results[1].assessment.confidence == 0.0
+
+
+def test_evidence_validator_canonicalizes_references() -> None:
+    class VariantClient(MockLLMClient):
+        async def evaluate(self, role, context_packet):
+            result = await super().evaluate(role, context_packet)
+            assessment = result.assessment.model_copy(
+                update={
+                    "evidence_ids": (
+                        "market_features:rsi_14",
+                        "momentum",
+                        "headlines",
+                        "unknown.value",
+                    )
+                }
+            )
+            return result.model_copy(update={"assessment": assessment})
+
+    result = asyncio.run(
+        EvidenceValidatedLLMClient(VariantClient()).evaluate(AgentRole.MARKET_CONTEXT, packet())
+    )
+
+    assert result.assessment.evidence_ids == (
+        "market_features.rsi_14",
+        "quantitative_signals.momentum",
+    )
+    assert "unknown.value" in result.assessment.limitations[-1]
 
 
 def test_pilot_uses_only_selected_development_decision(tmp_path) -> None:

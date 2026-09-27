@@ -21,6 +21,7 @@ from qqq_agents.llm import (
     AutoGenOpenAIClient,
     CachedLLMClient,
     EvidenceGatedLLMClient,
+    EvidenceValidatedLLMClient,
     MockLLMClient,
     execute_pilot,
     load_pilot_case,
@@ -254,7 +255,8 @@ async def _llm_case(config_path: Path, *, requested_date: str | None, real: bool
         mode = "deterministic_dry_run"
 
     gated_client = EvidenceGatedLLMClient(raw_client)
-    client = CachedLLMClient(gated_client, cache_dir) if config.llm.cache else gated_client
+    cached_client = CachedLLMClient(gated_client, cache_dir) if config.llm.cache else gated_client
+    client = EvidenceValidatedLLMClient(cached_client)
     try:
         payload = await execute_pilot(case=case, config=config, client=client, mode=mode)
     finally:
@@ -343,7 +345,8 @@ async def _hybrid_period(
         output_dir = f"artifacts/hybrid_{period_stem}_mock"
         period_name = f"{period_stem}_mock"
     gated_client = EvidenceGatedLLMClient(raw_client)
-    client = CachedLLMClient(gated_client, cache_root / cache_name)
+    cached_client = CachedLLMClient(gated_client, cache_root / cache_name)
+    client = EvidenceValidatedLLMClient(cached_client)
     last_reported = 0
 
     def report_progress(completed: int, total: int) -> None:

@@ -101,6 +101,70 @@ class EvidenceGatedLLMClient:
         return await self.client.evaluate(role, packet)
 
 
+class EvidenceValidatedLLMClient:
+    """Canonicalize provenance references and discard identifiers absent from the packet."""
+
+    def __init__(self, client: StructuredLLMClient) -> None:
+        self.client = client
+        self.model = client.model
+
+    @staticmethod
+    def _allowed(packet: MarketContextPacket) -> set[str]:
+        allowed = {f"market_features.{name}" for name in packet.market_features}
+        allowed.update(f"quantitative_signals.{name}" for name in packet.quantitative_signals)
+        allowed.update(item.evidence_id for item in packet.headlines)
+        allowed.update(
+            f"prior_assessments[{index}]" for index, _ in enumerate(packet.prior_assessments)
+        )
+        if packet.proposed_action is not None:
+            allowed.add("proposed_action")
+        return allowed
+
+    @staticmethod
+    def _canonical(raw: str, packet: MarketContextPacket) -> str | None:
+        candidate = raw.strip().replace(":", ".")
+        containers = {"market_features", "quantitative_signals", "headlines", "prior_assessments"}
+        if candidate in containers:
+            return None
+        if candidate in packet.quantitative_signals:
+            candidate = f"quantitative_signals.{candidate}"
+        for index, prior in enumerate(packet.prior_assessments):
+            aliases = (
+                f"prior_assessments.{index}",
+                f"prior_assessments.{prior.role.value}",
+            )
+            if any(candidate == alias or candidate.startswith(f"{alias}.") for alias in aliases):
+                candidate = f"prior_assessments[{index}]"
+                break
+        return candidate
+
+    async def evaluate(self, role: AgentRole, packet: MarketContextPacket) -> LLMCallResult:
+        result = await self.client.evaluate(role, packet)
+        allowed = self._allowed(packet)
+        normalized: list[str] = []
+        discarded: list[str] = []
+        for raw in result.assessment.evidence_ids:
+            candidate = self._canonical(raw, packet)
+            if candidate is None:
+                continue
+            if candidate in allowed:
+                if candidate not in normalized:
+                    normalized.append(candidate)
+            else:
+                discarded.append(raw)
+        limitations = result.assessment.limitations
+        if discarded:
+            limitations = (
+                *limitations,
+                "Se descartaron referencias no presentes en el paquete: "
+                + ", ".join(sorted(set(discarded))),
+            )
+        assessment = result.assessment.model_copy(
+            update={"evidence_ids": tuple(normalized), "limitations": limitations}
+        )
+        return result.model_copy(update={"assessment": assessment})
+
+
 class CachedLLMClient:
     def __init__(self, client: StructuredLLMClient, cache_dir: str | Path) -> None:
         self.client = client
