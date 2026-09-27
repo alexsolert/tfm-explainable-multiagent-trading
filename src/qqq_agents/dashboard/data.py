@@ -16,6 +16,7 @@ class DashboardArtifacts:
     decisions: pd.DataFrame
     equity: pd.DataFrame
     lime_cases: dict[str, Any] | None
+    llm_traces: dict[pd.Timestamp, dict[str, Any]]
 
 
 def parse_attribution_cell(value: object) -> list[dict[str, Any]]:
@@ -47,9 +48,17 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
     equity = pd.read_csv(required["equity"], index_col="date", parse_dates=["date"])
     lime_path = artifact_root / "explainability" / "lime_cases.json"
     lime_cases = json.loads(lime_path.read_text(encoding="utf-8")) if lime_path.exists() else None
+    llm_traces: dict[pd.Timestamp, dict[str, Any]] = {}
+    llm_root = artifact_root / "llm"
+    for pattern in ("dry_run_*.json", "pilot_*.json"):
+        for path in sorted(llm_root.glob(pattern)):
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            as_of = pd.Timestamp(payload["packet"]["as_of"])
+            llm_traces[as_of] = payload
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
         equity=equity.sort_index(),
         lime_cases=lime_cases,
+        llm_traces=llm_traces,
     )

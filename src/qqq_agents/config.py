@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -65,10 +65,12 @@ class LLMConfig(StrictModel):
     enabled: bool
     provider: str
     model: str
-    temperature: float = Field(ge=0)
+    reasoning_effort: Literal["minimal", "low", "medium", "high"]
     max_output_tokens: int = Field(gt=0)
     cache: bool
     budget_usd: float = Field(ge=0)
+    input_price_per_million: float = Field(ge=0)
+    output_price_per_million: float = Field(ge=0)
 
 
 class AppConfig(StrictModel):

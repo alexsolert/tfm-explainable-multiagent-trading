@@ -28,6 +28,7 @@ llm = [
   "autogen-agentchat>=0.7",
   "autogen-ext[openai]>=0.7",
   "openai>=1.68",
+  "python-dotenv>=1.1",
 ]
 dashboard = [
   "plotly>=6.0",
@@ -55,4 +56,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-

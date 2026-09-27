@@ -29,9 +29,16 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
         walk_forward / "validation_decisions.csv"
     )
     pd.DataFrame({"multiagent": [1.0]}, index=index).to_csv(walk_forward / "validation_equity.csv")
+    llm_dir = tmp_path / "llm"
+    llm_dir.mkdir()
+    (llm_dir / "dry_run_2022-01-07.json").write_text(
+        json.dumps({"packet": {"as_of": "2022-01-07"}, "mode": "deterministic_dry_run"}),
+        encoding="utf-8",
+    )
 
     artifacts = load_dashboard_artifacts(tmp_path)
 
     assert artifacts.metrics["quantitative_multiagent"]["sharpe_ratio"] == 1.0
     assert artifacts.decisions.index[0] == pd.Timestamp("2022-01-07")
     assert artifacts.lime_cases is None
+    assert artifacts.llm_traces[pd.Timestamp("2022-01-07")]["mode"] == "deterministic_dry_run"

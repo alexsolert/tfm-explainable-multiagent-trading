@@ -22,7 +22,7 @@ jobs:
           cache: pip
 
       - name: Install project
-        run: python -m pip install --editable ".[dev,xai,dashboard]"
+        run: python -m pip install --editable ".[dev,xai,dashboard,llm]"
 
       - name: Lint
         run: ruff check .

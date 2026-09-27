@@ -132,6 +132,56 @@ signal_figure = px.bar(
 )
 st.plotly_chart(signal_figure, width="stretch")
 
+st.markdown("#### Deliberación híbrida con agentes LLM")
+llm_trace = artifacts.llm_traces.get(selected_date.normalize())
+if llm_trace is None:
+    st.info(
+        "No existe una traza LLM para esta fecha. Ejecuta `qqq-agents llm-dry-run --date "
+        f"{selected_date.date()}` para generar una simulación gratuita."
+    )
+else:
+    combined = llm_trace["combined_decision"]
+    llm_columns = st.columns(4)
+    llm_columns[0].metric("Acción híbrida", combined["action"])
+    llm_columns[1].metric("Puntuación híbrida", f"{combined['score_before_veto']:.3f}")
+    llm_columns[2].metric(
+        "Coste incremental estimado",
+        f"${llm_trace['incremental_estimated_cost_usd']:.4f}",
+    )
+    llm_columns[3].metric(
+        "Modo",
+        "Piloto real" if llm_trace["mode"] == "openai_pilot" else "Simulación",
+    )
+
+    contribution_frame = pd.DataFrame(combined["contributions"])
+    contribution_figure = px.bar(
+        contribution_frame,
+        x="agent_id",
+        y="contribution",
+        color="contribution",
+        color_continuous_scale="RdYlGn",
+        labels={"agent_id": "Agente", "contribution": "Contribución ponderada"},
+    )
+    contribution_figure.update_coloraxes(showscale=False)
+    st.plotly_chart(contribution_figure, width="stretch")
+
+    role_names = {
+        "market_context": "Contexto de mercado",
+        "sentiment": "Sentimiento",
+        "strategic_validator": "Validación estratégica",
+    }
+    for result in llm_trace["llm_results"]:
+        assessment = result["assessment"]
+        with st.expander(role_names.get(result["role"], result["role"])):
+            st.write(assessment["justification"])
+            st.caption(
+                f"Señal: {assessment['signal']:.3f} · Confianza: "
+                f"{assessment['confidence']:.3f} · Modelo: {result['model']} · "
+                f"Caché: {'sí' if result['cached'] else 'no'}"
+            )
+            if assessment["limitations"]:
+                st.write("Limitaciones: " + "; ".join(assessment["limitations"]))
+
 st.markdown("#### Factores SHAP más influyentes")
 tabs = st.tabs(["Técnico", "Momentum", "Riesgo"])
 for tab, agent_id in zip(tabs, agent_ids, strict=True):

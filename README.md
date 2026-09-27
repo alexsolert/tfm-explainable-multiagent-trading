@@ -66,11 +66,20 @@ uv run qqq-agents walk-forward --personality aggressive
 # Generar LIME para compra, venta, veto y desacuerdo representativos
 uv run qqq-agents lime-cases
 
+# Validar gratis la ruta completa de los tres agentes LLM
+uv run qqq-agents llm-dry-run
+
+# Tras crear .env con OPENAI_API_KEY, ejecutar un unico piloto real acotado
+uv run qqq-agents llm-pilot
+
 # Abrir el dashboard local
 uv run streamlit run app/streamlit_app.py
 ```
 
 Los datos generados no se versionan. Los comandos y la configuracion permiten reconstruirlos.
+El piloto LLM solo utiliza decisiones del periodo de validacion, almacena las respuestas en cache
+y aplica el limite de gasto configurado antes de realizar llamadas. La accion final sigue siendo
+responsabilidad del coordinador determinista.
 
 ## Estructura
 
