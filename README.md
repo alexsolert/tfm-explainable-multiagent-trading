@@ -53,6 +53,18 @@ uv run qqq-agents baselines
 
 # Entrenar los tres agentes cuantitativos sin consultar 2023-2024
 uv run qqq-agents train-quant
+
+# Validacion walk-forward expansiva sobre 2020-2022
+uv run qqq-agents walk-forward
+
+# Repetir la validacion conservando explicaciones SHAP locales
+uv run qqq-agents walk-forward --with-shap
+
+# Comparar una personalidad alternativa sin cambiar codigo
+uv run qqq-agents walk-forward --personality aggressive
+
+# Generar LIME para compra, venta, veto y desacuerdo representativos
+uv run qqq-agents lime-cases
 ```
 
 Los datos generados no se versionan. Los comandos y la configuracion permiten reconstruirlos.

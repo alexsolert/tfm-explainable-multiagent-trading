@@ -34,7 +34,8 @@ def run_backtest(
     if not aligned_signal.dropna().between(0, 1).all():
         raise ValueError("Long-only desired positions must remain in [0, 1]")
 
-    asset_return = aligned_close.pct_change().fillna(0.0)
+    raw_asset_return = aligned_close.pct_change()
+    asset_return = raw_asset_return.fillna(0.0)
     applied_position = aligned_signal.shift(1).fillna(0.0)
     turnover = applied_position.diff().abs().fillna(applied_position.abs())
     costs = turnover * transaction_cost_bps / 10_000
@@ -57,6 +58,8 @@ def run_backtest(
         metrics=calculate_metrics(
             returns=strategy_return,
             turnover=turnover,
+            asset_returns=raw_asset_return,
+            positions=applied_position,
             periods_per_year=periods_per_year,
         ),
     )

@@ -14,6 +14,8 @@ def test_decision_is_applied_to_next_period_return() -> None:
 
     assert result.history["strategy_return"].iloc[0] == 0.0
     assert result.history["strategy_return"].iloc[1] == pytest.approx(0.1)
+    assert result.metrics["market_exposure"] == pytest.approx(0.75)
+    assert result.metrics["directional_accuracy"] == pytest.approx(1.0)
 
 
 def test_transaction_cost_is_charged_when_position_changes() -> None:
