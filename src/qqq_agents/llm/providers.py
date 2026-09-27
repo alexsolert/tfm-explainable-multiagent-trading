@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import warnings
 from pathlib import Path
 from typing import Protocol
 
@@ -70,6 +71,34 @@ class MockLLMClient:
             prompt_version=PROMPT_VERSION,
             assessment=assessment,
         )
+
+
+class EvidenceGatedLLMClient:
+    """Avoid paid inference when a role has no admissible evidence."""
+
+    def __init__(self, client: StructuredLLMClient) -> None:
+        self.client = client
+        self.model = client.model
+
+    async def evaluate(self, role: AgentRole, packet: MarketContextPacket) -> LLMCallResult:
+        if role is AgentRole.SENTIMENT and not packet.headlines:
+            return LLMCallResult(
+                role=role,
+                model="evidence-gate-v1",
+                prompt_version=PROMPT_VERSION,
+                assessment=LLMAssessment(
+                    signal=0.0,
+                    confidence=0.0,
+                    justification=(
+                        "No existen titulares fechados admisibles; el sentimiento se fija como "
+                        "neutral sin invocar un modelo de lenguaje."
+                    ),
+                    limitations=(
+                        "Las noticias históricas quedan pospuestas como mejora posterior.",
+                    ),
+                ),
+            )
+        return await self.client.evaluate(role, packet)
 
 
 class CachedLLMClient:
@@ -142,7 +171,13 @@ class AutoGenOpenAIClient:
             output_content_type=LLMAssessment,
             reflect_on_tool_use=False,
         )
-        result = await agent.run(task=packet.model_dump_json())
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="^Pydantic serializer warnings:",
+                category=UserWarning,
+            )
+            result = await agent.run(task=packet.model_dump_json())
         message = result.messages[-1]
         assessment = (
             message.content

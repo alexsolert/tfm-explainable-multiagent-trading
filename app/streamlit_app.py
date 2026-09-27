@@ -40,9 +40,14 @@ except FileNotFoundError as error:
     st.stop()
 
 metrics = artifacts.metrics
-strategy_metrics = metrics["quantitative_multiagent"]
+strategy_metrics = (
+    artifacts.hybrid_metrics["hybrid_multiagent"]
+    if artifacts.hybrid_metrics is not None
+    else metrics["quantitative_multiagent"]
+)
+strategy_label = "Híbrido" if artifacts.hybrid_metrics is not None else "Cuantitativo"
 
-st.subheader("Resultado de validación")
+st.subheader(f"Resultado de validación · {strategy_label}")
 columns = st.columns(5)
 columns[0].metric("Rentabilidad anualizada", percentage(strategy_metrics["annualized_return"]))
 columns[1].metric("Sharpe", f"{strategy_metrics['sharpe_ratio']:.2f}")
@@ -51,11 +56,23 @@ columns[3].metric("Exposición", percentage(strategy_metrics["market_exposure"])
 columns[4].metric("Vetos de riesgo", str(metrics["risk_veto_count"]))
 
 equity_long = (
-    artifacts.equity.rename_axis("date")
+    (
+        artifacts.equity.assign(
+            hybrid_multiagent=(
+                artifacts.hybrid_strategy["equity"]
+                if artifacts.hybrid_strategy is not None
+                else artifacts.equity["multiagent"]
+            )
+        )
+        if artifacts.hybrid_strategy is not None
+        else artifacts.equity
+    )
+    .rename_axis("date")
     .reset_index()
     .melt(id_vars="date", var_name="estrategia", value_name="capital_normalizado")
 )
 equity_names = {
+    "hybrid_multiagent": "Multiagente híbrido",
     "multiagent": "Multiagente",
     "buy_and_hold": "Buy & hold",
     "sma_50_200": "Medias 50/200",
@@ -75,7 +92,9 @@ equity_figure.update_layout(hovermode="x unified", legend_orientation="h")
 st.plotly_chart(equity_figure, width="stretch")
 
 with st.expander("Comparación numérica", expanded=False):
-    comparison = {"Multiagente": strategy_metrics}
+    comparison = {"Multiagente cuantitativo": metrics["quantitative_multiagent"]}
+    if artifacts.hybrid_metrics is not None:
+        comparison["Multiagente híbrido"] = strategy_metrics
     for name, values in metrics["baselines"].items():
         comparison[equity_names.get(name, name)] = values
     comparison_frame = pd.DataFrame(comparison).T.loc[
@@ -100,12 +119,23 @@ selected_date = st.selectbox(
     format_func=lambda value: value.strftime("%d/%m/%Y"),
 )
 decision = artifacts.decisions.loc[selected_date]
+hybrid_decision = (
+    artifacts.hybrid_decisions.loc[selected_date]
+    if artifacts.hybrid_decisions is not None and selected_date in artifacts.hybrid_decisions.index
+    else None
+)
 
 summary_columns = st.columns(4)
 summary_columns[0].metric("Acción", decision["action"])
 summary_columns[1].metric("Puntuación agregada", f"{decision['score_before_veto']:.3f}")
 summary_columns[2].metric("Posición resultante", f"{decision['desired_position']:.0f}")
 summary_columns[3].metric("Personalidad", str(decision["personality"]).capitalize())
+
+if hybrid_decision is not None:
+    st.caption(
+        f"Comité híbrido completo: {hybrid_decision['action']} · "
+        f"puntuación {hybrid_decision['score_before_veto']:.3f}"
+    )
 
 if bool(decision["risk_veto_triggered"]):
     st.warning(f"Veto de riesgo activado: {decision['risk_veto_reason']}")

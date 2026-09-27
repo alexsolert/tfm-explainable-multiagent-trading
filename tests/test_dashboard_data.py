@@ -35,6 +35,13 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
         json.dumps({"packet": {"as_of": "2022-01-07"}, "mode": "deterministic_dry_run"}),
         encoding="utf-8",
     )
+    hybrid_dir = tmp_path / "hybrid_validation"
+    hybrid_dir.mkdir()
+    (hybrid_dir / "metrics.json").write_text(
+        json.dumps({"hybrid_multiagent": {"sharpe_ratio": 1.1}}), encoding="utf-8"
+    )
+    pd.DataFrame({"action": ["HOLD"]}, index=index).to_csv(hybrid_dir / "decisions.csv")
+    pd.DataFrame({"equity": [1.0]}, index=index).to_csv(hybrid_dir / "strategy.csv")
 
     artifacts = load_dashboard_artifacts(tmp_path)
 
@@ -42,3 +49,5 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
     assert artifacts.decisions.index[0] == pd.Timestamp("2022-01-07")
     assert artifacts.lime_cases is None
     assert artifacts.llm_traces[pd.Timestamp("2022-01-07")]["mode"] == "deterministic_dry_run"
+    assert artifacts.hybrid_metrics["hybrid_multiagent"]["sharpe_ratio"] == 1.1
+    assert artifacts.hybrid_decisions.loc[pd.Timestamp("2022-01-07"), "action"] == "HOLD"

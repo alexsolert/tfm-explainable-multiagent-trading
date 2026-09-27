@@ -17,6 +17,9 @@ class DashboardArtifacts:
     equity: pd.DataFrame
     lime_cases: dict[str, Any] | None
     llm_traces: dict[pd.Timestamp, dict[str, Any]]
+    hybrid_metrics: dict[str, Any] | None
+    hybrid_decisions: pd.DataFrame | None
+    hybrid_strategy: pd.DataFrame | None
 
 
 def parse_attribution_cell(value: object) -> list[dict[str, Any]]:
@@ -55,10 +58,35 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
             payload = json.loads(path.read_text(encoding="utf-8"))
             as_of = pd.Timestamp(payload["packet"]["as_of"])
             llm_traces[as_of] = payload
+    hybrid_root = artifact_root / "hybrid_validation"
+    hybrid_paths = {
+        "metrics": hybrid_root / "metrics.json",
+        "decisions": hybrid_root / "decisions.csv",
+        "strategy": hybrid_root / "strategy.csv",
+    }
+    hybrid_available = all(path.exists() for path in hybrid_paths.values())
+    hybrid_metrics = (
+        json.loads(hybrid_paths["metrics"].read_text(encoding="utf-8"))
+        if hybrid_available
+        else None
+    )
+    hybrid_decisions = (
+        pd.read_csv(hybrid_paths["decisions"], index_col="date", parse_dates=["date"])
+        if hybrid_available
+        else None
+    )
+    hybrid_strategy = (
+        pd.read_csv(hybrid_paths["strategy"], index_col="date", parse_dates=["date"])
+        if hybrid_available
+        else None
+    )
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
         equity=equity.sort_index(),
         lime_cases=lime_cases,
         llm_traces=llm_traces,
+        hybrid_metrics=hybrid_metrics,
+        hybrid_decisions=(hybrid_decisions.sort_index() if hybrid_decisions is not None else None),
+        hybrid_strategy=(hybrid_strategy.sort_index() if hybrid_strategy is not None else None),
     )

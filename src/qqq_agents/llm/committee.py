@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from qqq_agents.llm.contracts import (
     AgentRole,
     LLMCallResult,
@@ -16,8 +18,10 @@ class LLMCommittee:
         self.client = client
 
     async def evaluate(self, packet: MarketContextPacket) -> tuple[LLMCallResult, ...]:
-        context = await self.client.evaluate(AgentRole.MARKET_CONTEXT, packet)
-        sentiment = await self.client.evaluate(AgentRole.SENTIMENT, packet)
+        context, sentiment = await asyncio.gather(
+            self.client.evaluate(AgentRole.MARKET_CONTEXT, packet),
+            self.client.evaluate(AgentRole.SENTIMENT, packet),
+        )
         prior = tuple(
             PriorAssessment(
                 role=result.role,

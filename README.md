@@ -72,6 +72,16 @@ uv run qqq-agents llm-dry-run
 # Tras crear .env con OPENAI_API_KEY, ejecutar un unico piloto real acotado
 uv run qqq-agents llm-pilot
 
+# Validar primero las 157 fechas con el proveedor local gratuito
+uv run qqq-agents hybrid-validation
+
+# Ejecutar la validacion LLM real solo tras aprobar payload y coste
+uv run qqq-agents hybrid-validation --provider openai
+
+# Abrir el test final exige confirmar que la especificacion esta congelada
+uv run qqq-agents final-quantitative --confirm-frozen-spec --with-shap
+uv run qqq-agents hybrid-final-test --confirm-frozen-spec --provider openai
+
 # Abrir el dashboard local
 uv run streamlit run app/streamlit_app.py
 ```
@@ -80,6 +90,9 @@ Los datos generados no se versionan. Los comandos y la configuracion permiten re
 El piloto LLM solo utiliza decisiones del periodo de validacion, almacena las respuestas en cache
 y aplica el limite de gasto configurado antes de realizar llamadas. La accion final sigue siendo
 responsabilidad del coordinador determinista.
+Cuando no existen noticias historicas con marcas temporales verificables, una compuerta de
+evidencia fija el sentimiento como neutral sin efectuar una llamada de pago. La integracion de
+noticias queda documentada como mejora posterior.
 
 ## Estructura
 

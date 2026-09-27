@@ -16,7 +16,7 @@ from qqq_agents.llm.committee import LLMCommittee
 from qqq_agents.llm.contracts import LLMCallResult, MarketContextPacket
 from qqq_agents.llm.providers import StructuredLLMClient
 from qqq_agents.personality import load_personality
-from qqq_agents.schemas import Action, AgentSignal, Personality
+from qqq_agents.schemas import Action, AgentSignal, DecisionTrace, Personality
 
 MARKET_FEATURES = (
     "close",
@@ -77,7 +77,48 @@ def load_pilot_case(
     if selected not in features.index:
         raise ValueError(f"No market features are available for {selected.date()}")
 
-    decision = eligible.loc[selected]
+    return _build_pilot_case(features=features, decisions=eligible, selected=selected)
+
+
+def load_pilot_cases(
+    *,
+    features_path: str | Path,
+    decisions_path: str | Path,
+    start: str,
+    end: str,
+    latest_allowed_date: str,
+) -> tuple[PilotCase, ...]:
+    """Load an ordered, bounded period while excluding any later decision rows."""
+
+    features = _read_indexed_csv(features_path)
+    decisions = _read_indexed_csv(decisions_path)
+    start_at = pd.Timestamp(start)
+    end_at = pd.Timestamp(end)
+    allowed_end = pd.Timestamp(latest_allowed_date)
+    if end_at > allowed_end:
+        raise ValueError(
+            f"Requested end {end_at.date()} exceeds latest allowed date {allowed_end.date()}"
+        )
+    eligible = decisions.loc[(decisions.index >= start_at) & (decisions.index <= end_at)]
+    if eligible.empty:
+        raise ValueError("No decisions are available in the requested period")
+    missing_features = eligible.index.difference(features.index)
+    if not missing_features.empty:
+        raise ValueError(f"Missing market features for {list(missing_features.date)}")
+    return tuple(
+        _build_pilot_case(features=features, decisions=decisions, selected=selected)
+        for selected in eligible.index
+    )
+
+
+def _build_pilot_case(
+    *,
+    features: pd.DataFrame,
+    decisions: pd.DataFrame,
+    selected: pd.Timestamp,
+) -> PilotCase:
+
+    decision = decisions.loc[selected]
     observation = features.loc[selected]
     personality = Personality(str(decision["personality"]))
     packet = MarketContextPacket(
@@ -113,7 +154,7 @@ def load_pilot_case(
             )
         )
 
-    preceding = eligible.loc[eligible.index < selected, "desired_position"]
+    preceding = decisions.loc[decisions.index < selected, "desired_position"]
     current_position = float(preceding.iloc[-1]) if not preceding.empty else 0.0
     return PilotCase(packet, tuple(signals), current_position)
 
@@ -155,6 +196,19 @@ async def execute_pilot(
     mode: str,
 ) -> dict[str, object]:
     results = await LLMCommittee(client).evaluate(case.packet)
+    trace = coordinate_pilot(case=case, config=config, results=results)
+    return pilot_payload(case=case, config=config, results=results, trace=trace, mode=mode)
+
+
+def coordinate_pilot(
+    *,
+    case: PilotCase,
+    config: AppConfig,
+    results: tuple[LLMCallResult, ...],
+    current_position: float | None = None,
+) -> DecisionTrace:
+    """Combine stored quantitative and LLM outputs under the deterministic coordinator."""
+
     profile = load_personality(f"configs/personalities/{case.packet.personality.value}.yaml")
     llm_signals = tuple(
         profile.transform_signal(
@@ -183,9 +237,22 @@ async def execute_pilot(
     trace = coordinator.decide(
         as_of=case.packet.as_of,
         signals=(*case.quantitative_signals, *llm_signals),
-        current_position=case.current_position,
+        current_position=(case.current_position if current_position is None else current_position),
         created_at=datetime.combine(case.packet.as_of, time.min, tzinfo=UTC),
     )
+    return trace
+
+
+def pilot_payload(
+    *,
+    case: PilotCase,
+    config: AppConfig,
+    results: tuple[LLMCallResult, ...],
+    trace: DecisionTrace,
+    mode: str,
+) -> dict[str, object]:
+    """Serialize a complete trace and its incremental token cost."""
+
     incremental_cost = sum(
         result.estimated_cost(
             input_price=config.llm.input_price_per_million,
