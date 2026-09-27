@@ -109,6 +109,10 @@ def _walk_forward(config_path: Path, *, include_shap: bool, personality: str) ->
     result.decisions.to_csv(output_dir / "validation_decisions.csv", index=True)
     result.strategy.history.to_csv(output_dir / "validation_strategy.csv", index=True)
     result.training_audit.to_csv(output_dir / "training_audit.csv", index=False)
+    equity = pd.DataFrame({"multiagent": result.strategy.history["equity"]})
+    for name, baseline in result.baselines.items():
+        equity[name] = baseline.history["equity"]
+    equity.to_csv(output_dir / "validation_equity.csv", index=True)
     metrics = {
         "period": {"start": config.experiment.validation_start, "end": "2022-12-31"},
         "personality": personality,

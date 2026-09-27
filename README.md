@@ -65,6 +65,9 @@ uv run qqq-agents walk-forward --personality aggressive
 
 # Generar LIME para compra, venta, veto y desacuerdo representativos
 uv run qqq-agents lime-cases
+
+# Abrir el dashboard local
+uv run streamlit run app/streamlit_app.py
 ```
 
 Los datos generados no se versionan. Los comandos y la configuracion permiten reconstruirlos.
