@@ -56,9 +56,9 @@ llm:
   enabled: false
   provider: openai
   model: gpt-5.4-mini-2026-03-17
-  reasoning_effort: low
-  max_output_tokens: 300
+  reasoning_effort: none
+  max_output_tokens: 600
   cache: true
-  budget_usd: 10.0
+  budget_usd: 5.0
   input_price_per_million: 0.75
   output_price_per_million: 4.50

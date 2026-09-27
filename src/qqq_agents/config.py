@@ -65,7 +65,7 @@ class LLMConfig(StrictModel):
     enabled: bool
     provider: str
     model: str
-    reasoning_effort: Literal["minimal", "low", "medium", "high"]
+    reasoning_effort: Literal["none", "low", "medium", "high", "xhigh"]
     max_output_tokens: int = Field(gt=0)
     cache: bool
     budget_usd: float = Field(ge=0)
