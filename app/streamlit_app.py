@@ -1,344 +1,602 @@
-"""Dashboard de trazabilidad del framework multiagente."""
+"""Aplicación pública de demostración del framework multiagente."""
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
-from qqq_agents.dashboard.data import load_dashboard_artifacts, parse_attribution_cell
+from qqq_agents.config import load_config
+from qqq_agents.dashboard.data import DashboardArtifacts, load_dashboard_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
+LOCAL_ARTIFACTS = ROOT / "artifacts"
+DEMO_ARTIFACTS = ROOT / "demo_data"
 
-
-def percentage(value: float) -> str:
-    return f"{value:.2%}"
-
-
-st.set_page_config(
-    page_title="Comité multiagente QQQ",
-    page_icon="📈",
-    layout="wide",
-)
-
-st.title("Comité multiagente explicable sobre QQQ")
-st.caption(
-    "Validación walk-forward 2020-2022 y test final 2023-2024, abierto una sola vez después "
-    "de congelar la especificación."
-)
-
-try:
-    artifacts = load_dashboard_artifacts(ROOT / "artifacts")
-except FileNotFoundError as error:
-    st.error(str(error))
-    st.code(
-        "uv run qqq-agents download\n"
-        "uv run qqq-agents prepare\n"
-        "uv run qqq-agents walk-forward --with-shap\n"
-        "uv run qqq-agents lime-cases",
-        language="bash",
-    )
-    st.stop()
-
-equity_names = {
+COLORS = {
+    "Multiagente híbrido": "#14b8a6",
+    "Multiagente cuantitativo": "#38bdf8",
+    "Buy & hold": "#f59e0b",
+    "Medias 50/200": "#a78bfa",
+    "Agente logístico único": "#fb7185",
+}
+EQUITY_NAMES = {
     "hybrid_multiagent": "Multiagente híbrido",
     "multiagent": "Multiagente cuantitativo",
     "buy_and_hold": "Buy & hold",
     "sma_50_200": "Medias 50/200",
     "single_logistic_agent": "Agente logístico único",
 }
+ROLE_NAMES = {
+    "market_context": "Contexto de mercado",
+    "sentiment": "Sentimiento",
+    "strategic_validator": "Validación estratégica",
+}
+ACTION_NAMES = {"BUY": "Comprar", "HOLD": "Mantener", "SELL": "Vender"}
 
-if (
-    artifacts.final_quantitative_metrics is not None
-    and artifacts.final_quantitative_equity is not None
-):
-    final_quantitative = artifacts.final_quantitative_metrics["quantitative_multiagent"]
-    final_strategy = (
-        artifacts.final_hybrid_metrics["hybrid_multiagent"]
-        if artifacts.final_hybrid_metrics is not None
-        else final_quantitative
-    )
-    st.subheader("Test final fuera de muestra · 2023-2024")
-    final_columns = st.columns(5)
-    final_columns[0].metric(
-        "Rentabilidad anualizada", percentage(final_strategy["annualized_return"])
-    )
-    final_columns[1].metric("Sharpe", f"{final_strategy['sharpe_ratio']:.2f}")
-    final_columns[2].metric("Máximo drawdown", percentage(final_strategy["maximum_drawdown"]))
-    final_columns[3].metric("Exposición", percentage(final_strategy["market_exposure"]))
-    final_columns[4].metric(
-        "Coste LLM estimado",
-        (
-            f"${artifacts.final_hybrid_metrics['llm_estimated_cost_usd']:.3f}"
-            if artifacts.final_hybrid_metrics is not None
-            else "No ejecutado"
-        ),
-    )
 
-    final_equity = artifacts.final_quantitative_equity.copy()
-    if artifacts.final_hybrid_strategy is not None:
-        final_equity["hybrid_multiagent"] = artifacts.final_hybrid_strategy["equity"]
-    final_equity_long = (
-        final_equity.rename_axis("date")
+def percentage(value: float) -> str:
+    return f"{value:.2%}".replace(".", ",")
+
+
+def resolve_data_root() -> tuple[Path, str]:
+    override = os.getenv("QQQ_DASHBOARD_DATA_ROOT")
+    if override:
+        return Path(override), "Demo reproducible"
+    local_required = LOCAL_ARTIFACTS / "final_quantitative" / "final_test_metrics.json"
+    if local_required.exists():
+        return LOCAL_ARTIFACTS, "Resultados locales completos"
+    return DEMO_ARTIFACTS, "Demo reproducible"
+
+
+@st.cache_data(show_spinner=False)
+def load_data(root: str) -> DashboardArtifacts:
+    return load_dashboard_artifacts(root)
+
+
+def equity_figure(equity: pd.DataFrame, hybrid: pd.Series | None = None) -> go.Figure:
+    frame = equity.copy()
+    if hybrid is not None:
+        frame["hybrid_multiagent"] = hybrid
+    long = (
+        frame.rename_axis("date")
         .reset_index()
-        .melt(id_vars="date", var_name="estrategia", value_name="capital_normalizado")
+        .melt(id_vars="date", var_name="strategy", value_name="equity")
     )
-    final_equity_long["estrategia"] = (
-        final_equity_long["estrategia"].map(equity_names).fillna(final_equity_long["estrategia"])
-    )
-    final_equity_figure = px.line(
-        final_equity_long,
+    long["strategy"] = long["strategy"].map(EQUITY_NAMES).fillna(long["strategy"])
+    figure = px.line(
+        long,
         x="date",
-        y="capital_normalizado",
-        color="estrategia",
-        labels={"date": "Fecha", "capital_normalizado": "Capital normalizado", "estrategia": ""},
+        y="equity",
+        color="strategy",
+        color_discrete_map=COLORS,
+        labels={"date": "Fecha", "equity": "Capital normalizado", "strategy": ""},
     )
-    final_equity_figure.update_layout(hovermode="x unified", legend_orientation="h")
-    st.plotly_chart(final_equity_figure, width="stretch")
-
-    with st.expander("Comparación final con baselines", expanded=True):
-        final_comparison = {"Multiagente cuantitativo": final_quantitative}
-        if artifacts.final_hybrid_metrics is not None:
-            final_comparison["Multiagente híbrido"] = final_strategy
-        for name, values in artifacts.final_quantitative_metrics["baselines"].items():
-            final_comparison[equity_names.get(name, name)] = values
-        final_comparison_frame = pd.DataFrame(final_comparison).T.loc[
-            :,
-            [
-                "annualized_return",
-                "annualized_volatility",
-                "sharpe_ratio",
-                "maximum_drawdown",
-                "market_exposure",
-                "position_changes",
-            ],
-        ]
-        st.dataframe(final_comparison_frame, width="stretch")
-        st.caption(
-            "El resultado se presenta sin reajuste posterior: el sistema multiagente redujo la "
-            "volatilidad frente a buy & hold y medias 50/200, pero obtuvo menor rentabilidad y "
-            "Sharpe."
-        )
-
-    st.divider()
-
-metrics = artifacts.metrics
-strategy_metrics = (
-    artifacts.hybrid_metrics["hybrid_multiagent"]
-    if artifacts.hybrid_metrics is not None
-    else metrics["quantitative_multiagent"]
-)
-strategy_label = "Híbrido" if artifacts.hybrid_metrics is not None else "Cuantitativo"
-
-st.subheader(f"Resultado de validación · {strategy_label}")
-columns = st.columns(5)
-columns[0].metric("Rentabilidad anualizada", percentage(strategy_metrics["annualized_return"]))
-columns[1].metric("Sharpe", f"{strategy_metrics['sharpe_ratio']:.2f}")
-columns[2].metric("Máximo drawdown", percentage(strategy_metrics["maximum_drawdown"]))
-columns[3].metric("Exposición", percentage(strategy_metrics["market_exposure"]))
-columns[4].metric("Vetos de riesgo", str(metrics["risk_veto_count"]))
-
-equity_long = (
-    (
-        artifacts.equity.assign(
-            hybrid_multiagent=(
-                artifacts.hybrid_strategy["equity"]
-                if artifacts.hybrid_strategy is not None
-                else artifacts.equity["multiagent"]
-            )
-        )
-        if artifacts.hybrid_strategy is not None
-        else artifacts.equity
+    figure.update_traces(line_width=2.4)
+    figure.update_layout(
+        hovermode="x unified",
+        legend_orientation="h",
+        legend_y=1.12,
+        margin=dict(l=10, r=10, t=55, b=10),
+        height=440,
     )
-    .rename_axis("date")
-    .reset_index()
-    .melt(id_vars="date", var_name="estrategia", value_name="capital_normalizado")
-)
-equity_long["estrategia"] = (
-    equity_long["estrategia"].map(equity_names).fillna(equity_long["estrategia"])
-)
-equity_figure = px.line(
-    equity_long,
-    x="date",
-    y="capital_normalizado",
-    color="estrategia",
-    labels={"date": "Fecha", "capital_normalizado": "Capital normalizado", "estrategia": ""},
-)
-equity_figure.update_layout(hovermode="x unified", legend_orientation="h")
-st.plotly_chart(equity_figure, width="stretch")
+    return figure
 
-with st.expander("Comparación numérica", expanded=False):
-    comparison = {"Multiagente cuantitativo": metrics["quantitative_multiagent"]}
-    if artifacts.hybrid_metrics is not None:
-        comparison["Multiagente híbrido"] = strategy_metrics
+
+def comparison_table(metrics: dict[str, object], hybrid: dict[str, float] | None) -> pd.DataFrame:
+    comparison: dict[str, dict[str, float]] = {
+        "Multiagente cuantitativo": metrics["quantitative_multiagent"]
+    }
+    if hybrid is not None:
+        comparison["Multiagente híbrido"] = hybrid
     for name, values in metrics["baselines"].items():
-        comparison[equity_names.get(name, name)] = values
-    comparison_frame = pd.DataFrame(comparison).T.loc[
-        :,
+        comparison[EQUITY_NAMES.get(name, name)] = values
+    frame = pd.DataFrame(comparison).T[
         [
+            "cumulative_return",
             "annualized_return",
+            "annualized_volatility",
             "sharpe_ratio",
             "maximum_drawdown",
             "market_exposure",
-            "directional_accuracy",
-            "position_changes",
-        ],
+        ]
     ]
-    st.dataframe(comparison_frame, width="stretch")
-
-st.divider()
-st.subheader("Trazabilidad de una decisión")
-available_dates = list(artifacts.decisions.index[::-1])
-selected_date = st.selectbox(
-    "Fecha de decisión",
-    options=available_dates,
-    format_func=lambda value: value.strftime("%d/%m/%Y"),
-)
-decision = artifacts.decisions.loc[selected_date]
-hybrid_decision = (
-    artifacts.hybrid_decisions.loc[selected_date]
-    if artifacts.hybrid_decisions is not None and selected_date in artifacts.hybrid_decisions.index
-    else None
-)
-
-summary_columns = st.columns(4)
-summary_columns[0].metric("Acción", decision["action"])
-summary_columns[1].metric("Puntuación agregada", f"{decision['score_before_veto']:.3f}")
-summary_columns[2].metric("Posición resultante", f"{decision['desired_position']:.0f}")
-summary_columns[3].metric("Personalidad", str(decision["personality"]).capitalize())
-
-if hybrid_decision is not None:
-    st.caption(
-        f"Comité híbrido completo: {hybrid_decision['action']} · "
-        f"puntuación {hybrid_decision['score_before_veto']:.3f}"
+    return frame.rename(
+        columns={
+            "cumulative_return": "Rentabilidad acumulada",
+            "annualized_return": "Rentabilidad anualizada",
+            "annualized_volatility": "Volatilidad",
+            "sharpe_ratio": "Sharpe",
+            "maximum_drawdown": "Drawdown máximo",
+            "market_exposure": "Exposición",
+        }
     )
 
-if bool(decision["risk_veto_triggered"]):
-    st.warning(f"Veto de riesgo activado: {decision['risk_veto_reason']}")
-else:
-    st.success("El agente de riesgo no activó el veto.")
 
-agent_ids = ("technical", "momentum", "risk")
-signal_frame = pd.DataFrame(
-    {
-        "agente": ["Técnico", "Momentum", "Riesgo"],
-        "señal": [decision[f"{agent_id}_signal"] for agent_id in agent_ids],
-        "confianza": [decision[f"{agent_id}_confidence"] for agent_id in agent_ids],
+def representative_dates(decisions: pd.DataFrame) -> dict[pd.Timestamp, str]:
+    representatives: dict[pd.Timestamp, str] = {}
+    action_difference = decisions.loc[
+        decisions["action"] != decisions["quantitative_proposed_action"]
+    ]
+    if not action_difference.empty:
+        representatives[action_difference.index[0]] = "Cambio introducido por el comité LLM"
+    vetoes = decisions.loc[decisions["risk_veto_triggered"]]
+    if not vetoes.empty:
+        representatives[vetoes.index[0]] = "Veto de riesgo"
+    for action, label in (("BUY", "Compra"), ("SELL", "Venta")):
+        matches = decisions.loc[decisions["action"] == action]
+        if not matches.empty:
+            representatives.setdefault(matches.index[0], label)
+    signal_columns = ["technical_signal", "momentum_signal", "risk_signal"]
+    disagreement = decisions[signal_columns].std(axis=1).idxmax()
+    representatives.setdefault(disagreement, "Máximo desacuerdo cuantitativo")
+    return representatives
+
+
+def render_header(title: str, subtitle: str) -> None:
+    st.markdown(f"## {title}")
+    st.markdown(f"<p class='page-subtitle'>{subtitle}</p>", unsafe_allow_html=True)
+
+
+st.set_page_config(
+    page_title="QQQ Multi-Agent Lab",
+    page_icon="◈",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+    :root { --ink: #0f172a; --muted: #64748b; --accent: #0f766e; }
+    .stApp { background: linear-gradient(180deg, #f8fafc 0%, #ffffff 35%); }
+    [data-testid="stSidebar"] { background: #0f172a; }
+    [data-testid="stSidebar"] * { color: #e2e8f0; }
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        padding: .42rem .65rem; border-radius: .55rem;
     }
+    .hero {
+        padding: 2.4rem 2.6rem; border-radius: 1.25rem; color: white;
+        background: radial-gradient(circle at 82% 18%, #14b8a6 0%, #0f766e 22%, #0f172a 66%);
+        box-shadow: 0 18px 55px rgba(15, 23, 42, .16); margin-bottom: 1.4rem;
+    }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3.35rem); line-height: 1.03; margin: 0 0 .8rem; }
+    .hero p { max-width: 760px; color: #dbeafe; font-size: 1.08rem; margin: 0; }
+    .eyebrow { letter-spacing: .12em; text-transform: uppercase; font-size: .78rem;
+        color: #99f6e4; font-weight: 700; margin-bottom: .7rem; }
+    .badge { display: inline-block; padding: .3rem .62rem; margin: .8rem .35rem 0 0;
+        border-radius: 999px; background: rgba(255,255,255,.13); font-size: .82rem; }
+    .page-subtitle { color: var(--muted); margin-top: -.55rem; margin-bottom: 1.3rem; }
+    [data-testid="stMetric"] { background: white; border: 1px solid #e2e8f0;
+        padding: .9rem 1rem; border-radius: .8rem; box-shadow: 0 4px 16px rgba(15,23,42,.045); }
+    [data-testid="stMetricValue"] { color: var(--ink); }
+    div[data-testid="stVerticalBlockBorderWrapper"] { background: rgba(255,255,255,.72); }
+    .footer { color: #64748b; font-size: .82rem; border-top: 1px solid #e2e8f0;
+        margin-top: 2.5rem; padding-top: 1rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
-signal_long = signal_frame.melt(id_vars="agente", var_name="medida", value_name="valor")
-signal_figure = px.bar(
-    signal_long,
-    x="agente",
-    y="valor",
-    color="medida",
-    barmode="group",
-    range_y=[-1, 1],
-    labels={"agente": "Agente", "valor": "Valor normalizado", "medida": ""},
-)
-st.plotly_chart(signal_figure, width="stretch")
 
-st.markdown("#### Deliberación híbrida con agentes LLM")
-llm_trace = artifacts.llm_traces.get(selected_date.normalize())
-if llm_trace is None:
+data_root, data_mode = resolve_data_root()
+try:
+    artifacts = load_data(str(data_root))
+except FileNotFoundError as error:
+    st.error(str(error))
+    st.stop()
+
+config = load_config(ROOT / "configs" / "base.yaml")
+final_metrics = artifacts.final_quantitative_metrics
+final_hybrid_metrics = artifacts.final_hybrid_metrics
+final_strategy = (
+    final_hybrid_metrics["hybrid_multiagent"]
+    if final_hybrid_metrics is not None
+    else final_metrics["quantitative_multiagent"]
+)
+
+st.sidebar.markdown("# ◈ QQQ Multi-Agent Lab")
+st.sidebar.caption("Framework jerárquico y explicable")
+page = st.sidebar.radio(
+    "Navegación",
+    ("Inicio", "Arquitectura", "Resultados", "Decisiones", "Explicabilidad", "Metodología"),
+    label_visibility="collapsed",
+)
+st.sidebar.divider()
+st.sidebar.markdown(f"**Estado:** {data_mode}")
+st.sidebar.caption("Experimento congelado · Test final 2023–2024")
+st.sidebar.success("MVP completado")
+
+if page == "Inicio":
+    st.markdown(
+        """
+        <div class="hero">
+          <div class="eyebrow">Trabajo Final de Máster · Alex Soler Trias</div>
+          <h1>Un comité de agentes que razona, decide y explica</h1>
+          <p>Framework experimental sobre QQQ que combina modelos cuantitativos, agentes LLM y
+          un coordinador jerárquico con veto de riesgo. Cada decisión conserva su evidencia y puede
+          reconstruirse de extremo a extremo.</p>
+          <span class="badge">Long-only</span><span class="badge">Walk-forward</span>
+          <span class="badge">SHAP + LIME</span><span class="badge">LLM con evidencia</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    columns = st.columns(4)
+    columns[0].metric("Rentabilidad final", percentage(final_strategy["cumulative_return"]))
+    columns[1].metric("Sharpe", f"{final_strategy['sharpe_ratio']:.3f}")
+    columns[2].metric("Drawdown máximo", percentage(final_strategy["maximum_drawdown"]))
+    columns[3].metric("Decisiones auditadas", "105")
+
+    st.markdown("### Qué demuestra el prototipo")
+    demo_columns = st.columns(3)
+    with demo_columns[0].container(border=True):
+        st.markdown("#### Especialización")
+        st.write(
+            "Tres agentes cuantitativos y tres roles LLM analizan tendencia, momentum, riesgo y "
+            "contexto con contratos comunes."
+        )
+    with demo_columns[1].container(border=True):
+        st.markdown("#### Coordinación controlada")
+        st.write(
+            "Un coordinador determinista agrega señales ponderadas. El LLM aporta contexto, pero "
+            "nunca ejecuta operaciones directamente."
+        )
+    with demo_columns[2].container(border=True):
+        st.markdown("#### Trazabilidad")
+        st.write(
+            "SHAP, LIME, referencias de evidencia y versiones de modelo permiten reconstruir cada "
+            "recomendación."
+        )
+
     st.info(
-        "No existe una traza LLM para esta fecha. Ejecuta `qqq-agents llm-dry-run --date "
-        f"{selected_date.date()}` para generar una simulación gratuita."
-    )
-else:
-    combined = llm_trace["combined_decision"]
-    llm_columns = st.columns(4)
-    llm_columns[0].metric("Acción híbrida", combined["action"])
-    llm_columns[1].metric("Puntuación híbrida", f"{combined['score_before_veto']:.3f}")
-    llm_columns[2].metric(
-        "Coste incremental estimado",
-        f"${llm_trace['incremental_estimated_cost_usd']:.4f}",
-    )
-    llm_columns[3].metric(
-        "Modo",
-        "Piloto real" if llm_trace["mode"] == "openai_pilot" else "Simulación",
+        "Hallazgo principal: el sistema funcionó de forma reproducible y explicable, pero no "
+        "superó los baselines financieros en el test final. El resultado se muestra sin reajustes."
     )
 
-    contribution_frame = pd.DataFrame(combined["contributions"])
+elif page == "Arquitectura":
+    render_header(
+        "Arquitectura jerárquica",
+        "Las capas separan predicción, razonamiento contextual, coordinación y control de riesgo.",
+    )
+    labels = [
+        "Técnico",
+        "Momentum",
+        "Riesgo",
+        "Contexto",
+        "Sentimiento",
+        "Validador",
+        "Coordinador",
+        "Veto de riesgo",
+        "BUY / HOLD / SELL",
+    ]
+    figure = go.Figure(
+        go.Sankey(
+            arrangement="snap",
+            node=dict(
+                label=labels,
+                color=["#38bdf8"] * 3 + ["#a78bfa"] * 3 + ["#14b8a6", "#fb7185", "#0f172a"],
+                pad=24,
+                thickness=22,
+            ),
+            link=dict(
+                source=[0, 1, 2, 3, 4, 5, 6, 7],
+                target=[6, 6, 6, 6, 6, 6, 7, 8],
+                value=[30, 25, 25, 8, 6, 6, 100, 100],
+                color=["rgba(56,189,248,.3)"] * 3
+                + ["rgba(167,139,250,.3)"] * 3
+                + ["rgba(20,184,166,.35)", "rgba(251,113,133,.35)"],
+            ),
+        )
+    )
+    figure.update_layout(height=480, margin=dict(l=20, r=20, t=20, b=20), font_size=13)
+    st.plotly_chart(figure, width="stretch")
+
+    layer_columns = st.columns(4)
+    descriptions = (
+        ("01 · Datos", "Variables técnicas de QQQ fechadas y preparadas sin información futura."),
+        ("02 · Agentes", "Señal, confianza, explicación y evidencia bajo un contrato común."),
+        ("03 · Coordinación", "Suma ponderada, umbrales de acción y personalidad conservadora."),
+        ("04 · Salida", "Posición binaria long-only y traza completa de la deliberación."),
+    )
+    for column, (title, description) in zip(layer_columns, descriptions, strict=True):
+        with column.container(border=True):
+            st.markdown(f"**{title}**")
+            st.caption(description)
+
+elif page == "Resultados":
+    render_header(
+        "Resultados experimentales",
+        "Comparación fuera de muestra y validación previa con la configuración congelada.",
+    )
+    final_tab, validation_tab = st.tabs(["Test final · 2023–2024", "Validación · 2020–2022"])
+    with final_tab:
+        result_columns = st.columns(5)
+        result_columns[0].metric(
+            "Rentabilidad acumulada", percentage(final_strategy["cumulative_return"])
+        )
+        result_columns[1].metric(
+            "Rentabilidad anual", percentage(final_strategy["annualized_return"])
+        )
+        result_columns[2].metric("Volatilidad", percentage(final_strategy["annualized_volatility"]))
+        result_columns[3].metric("Sharpe", f"{final_strategy['sharpe_ratio']:.3f}")
+        result_columns[4].metric("Exposición", percentage(final_strategy["market_exposure"]))
+        st.plotly_chart(
+            equity_figure(
+                artifacts.final_quantitative_equity,
+                artifacts.final_hybrid_strategy["equity"]
+                if artifacts.final_hybrid_strategy is not None
+                else None,
+            ),
+            width="stretch",
+        )
+        table = comparison_table(
+            final_metrics,
+            final_hybrid_metrics["hybrid_multiagent"] if final_hybrid_metrics is not None else None,
+        )
+        st.dataframe(
+            table.style.format(
+                {
+                    "Rentabilidad acumulada": "{:.2%}",
+                    "Rentabilidad anualizada": "{:.2%}",
+                    "Volatilidad": "{:.2%}",
+                    "Sharpe": "{:.3f}",
+                    "Drawdown máximo": "{:.2%}",
+                    "Exposición": "{:.2%}",
+                }
+            ),
+            width="stretch",
+        )
+        st.warning(
+            "El multiagente redujo la volatilidad frente a buy & hold y medias 50/200, pero quedó "
+            "por debajo de los tres baselines en rentabilidad, Sharpe y drawdown máximo."
+        )
+    with validation_tab:
+        validation_strategy = artifacts.hybrid_metrics["hybrid_multiagent"]
+        columns = st.columns(4)
+        columns[0].metric(
+            "Rentabilidad acumulada", percentage(validation_strategy["cumulative_return"])
+        )
+        columns[1].metric(
+            "Rentabilidad anual", percentage(validation_strategy["annualized_return"])
+        )
+        columns[2].metric("Sharpe", f"{validation_strategy['sharpe_ratio']:.3f}")
+        columns[3].metric("Drawdown máximo", percentage(validation_strategy["maximum_drawdown"]))
+        st.plotly_chart(
+            equity_figure(artifacts.equity, artifacts.hybrid_strategy["equity"]),
+            width="stretch",
+        )
+        st.caption(
+            "La configuración se seleccionó únicamente con información hasta 2022. El periodo "
+            "2023–2024 se abrió después de documentar la congelación experimental."
+        )
+
+elif page == "Decisiones":
+    render_header(
+        "Explorador de decisiones",
+        "Reconstrucción de señales, contribuciones, evidencias y acción final para cada semana.",
+    )
+    quantitative = artifacts.final_quantitative_decisions
+    hybrid = artifacts.final_hybrid_decisions
+    representatives = representative_dates(hybrid)
+    mode = st.segmented_control(
+        "Selección",
+        options=("Casos representativos", "Todas las fechas"),
+        default="Casos representativos",
+    )
+    dates = list(representatives) if mode == "Casos representativos" else list(hybrid.index[::-1])
+
+    def format_date(value: pd.Timestamp) -> str:
+        label = value.strftime("%d/%m/%Y")
+        return f"{label} · {representatives[value]}" if value in representatives else label
+
+    selected_date = st.selectbox("Fecha de decisión", dates, format_func=format_date)
+    hybrid_row = hybrid.loc[selected_date]
+    quant_row = quantitative.loc[selected_date]
+    summary = st.columns(5)
+    summary[0].metric(
+        "Acción cuantitativa", ACTION_NAMES[hybrid_row["quantitative_proposed_action"]]
+    )
+    summary[1].metric("Acción híbrida", ACTION_NAMES[hybrid_row["action"]])
+    summary[2].metric("Puntuación", f"{hybrid_row['score_before_veto']:.3f}")
+    summary[3].metric("Posición", "Invertido" if hybrid_row["desired_position"] else "Efectivo")
+    summary[4].metric("Personalidad", str(hybrid_row["personality"]).capitalize())
+
+    if hybrid_row["action"] != hybrid_row["quantitative_proposed_action"]:
+        st.info("El comité LLM modificó la recomendación cuantitativa en esta fecha.")
+    if bool(hybrid_row["risk_veto_triggered"]):
+        st.warning("El agente de riesgo activó el veto y bloqueó una nueva exposición.")
+
+    contribution_columns = [
+        "technical_contribution",
+        "momentum_contribution",
+        "risk_contribution",
+        "market_context_contribution",
+        "sentiment_contribution",
+        "strategic_validator_contribution",
+    ]
+    contributions = pd.DataFrame(
+        {
+            "Agente": [
+                ROLE_NAMES.get(
+                    name.removesuffix("_contribution"),
+                    name.removesuffix("_contribution").replace("_", " ").title(),
+                )
+                for name in contribution_columns
+            ],
+            "Contribución": [hybrid_row[name] for name in contribution_columns],
+        }
+    )
     contribution_figure = px.bar(
-        contribution_frame,
-        x="agent_id",
-        y="contribution",
-        color="contribution",
+        contributions,
+        x="Agente",
+        y="Contribución",
+        color="Contribución",
         color_continuous_scale="RdYlGn",
-        labels={"agent_id": "Agente", "contribution": "Contribución ponderada"},
+        range_color=[-0.15, 0.15],
     )
     contribution_figure.update_coloraxes(showscale=False)
+    contribution_figure.update_layout(height=350, margin=dict(l=10, r=10, t=25, b=10))
     st.plotly_chart(contribution_figure, width="stretch")
 
-    role_names = {
-        "market_context": "Contexto de mercado",
-        "sentiment": "Sentimiento",
-        "strategic_validator": "Validación estratégica",
-    }
-    for result in llm_trace["llm_results"]:
-        assessment = result["assessment"]
-        with st.expander(role_names.get(result["role"], result["role"])):
-            st.write(assessment["justification"])
+    st.markdown("### Deliberación de los agentes LLM")
+    for role in ROLE_NAMES:
+        with st.expander(ROLE_NAMES[role], expanded=role == "strategic_validator"):
+            st.write(hybrid_row[f"{role}_justification"])
+            detail_columns = st.columns(3)
+            detail_columns[0].metric("Señal", f"{hybrid_row[f'{role}_signal']:.3f}")
+            detail_columns[1].metric("Confianza", f"{hybrid_row[f'{role}_confidence']:.3f}")
+            detail_columns[2].metric("Modelo", hybrid_row[f"{role}_model"])
+            evidence = json.loads(hybrid_row[f"{role}_evidence_ids"])
+            limitations = json.loads(hybrid_row[f"{role}_limitations"])
             st.caption(
-                f"Señal: {assessment['signal']:.3f} · Confianza: "
-                f"{assessment['confidence']:.3f} · Modelo: {result['model']} · "
-                f"Caché: {'sí' if result['cached'] else 'no'}"
+                "Evidencias: " + (", ".join(evidence) if evidence else "sin evidencia textual")
             )
-            if assessment["limitations"]:
-                st.write("Limitaciones: " + "; ".join(assessment["limitations"]))
+            if limitations:
+                st.caption("Limitaciones: " + " · ".join(limitations))
 
-st.markdown("#### Factores SHAP más influyentes")
-tabs = st.tabs(["Técnico", "Momentum", "Riesgo"])
-for tab, agent_id in zip(tabs, agent_ids, strict=True):
-    with tab:
-        attributions = parse_attribution_cell(decision.get(f"{agent_id}_shap"))
-        if not attributions:
-            st.info("No hay explicaciones SHAP almacenadas para esta ejecución.")
-            continue
-        attribution_frame = pd.DataFrame(attributions)
-        attribution_frame["direccion"] = attribution_frame["contribution"].apply(
-            lambda value: "Favorece clase positiva" if value >= 0 else "Favorece clase negativa"
-        )
-        attribution_figure = px.bar(
-            attribution_frame.sort_values("contribution"),
-            x="contribution",
-            y="feature",
-            color="direccion",
-            orientation="h",
-            labels={"contribution": "Contribución SHAP", "feature": "Variable", "direccion": ""},
-        )
-        st.plotly_chart(attribution_figure, width="stretch")
-        st.dataframe(
-            attribution_frame.loc[:, ["feature", "value", "contribution"]],
-            width="stretch",
-            hide_index=True,
-        )
+    st.markdown("### Explicación SHAP de los agentes cuantitativos")
+    tabs = st.tabs(["Técnico", "Momentum", "Riesgo"])
+    for tab, agent in zip(tabs, ("technical", "momentum", "risk"), strict=True):
+        with tab:
+            values = json.loads(quant_row[f"{agent}_shap"])
+            shap_frame = pd.DataFrame(values).sort_values("contribution")
+            shap_figure = px.bar(
+                shap_frame,
+                x="contribution",
+                y="feature",
+                color="contribution",
+                color_continuous_scale="RdYlGn",
+                orientation="h",
+                labels={"contribution": "Contribución SHAP", "feature": "Variable"},
+            )
+            shap_figure.update_coloraxes(showscale=False)
+            st.plotly_chart(shap_figure, width="stretch")
 
-st.divider()
-st.subheader("Casos representativos explicados con LIME")
-if artifacts.lime_cases is None:
-    st.info("Ejecuta 'qqq-agents lime-cases' para generar esta sección.")
-else:
-    lime_cases = pd.DataFrame(artifacts.lime_cases["cases"])
-    selected_case = st.selectbox(
-        "Caso",
-        options=list(artifacts.lime_cases["selection"]),
-        format_func=lambda value: value.replace("_", " ").capitalize(),
+elif page == "Explicabilidad":
+    render_header(
+        "Explicabilidad por diseño",
+        "Cada naturaleza de agente utiliza un mecanismo de explicación apropiado a su salida.",
     )
-    matching = lime_cases.loc[lime_cases["case_type"] == selected_case]
-    st.caption(
-        f"Fecha: {matching.iloc[0]['date']} · Acción: {matching.iloc[0]['action']} · "
-        f"Veto: {'sí' if matching.iloc[0]['risk_veto_triggered'] else 'no'}"
-    )
+    explanation_columns = st.columns(3)
+    with explanation_columns[0].container(border=True):
+        st.markdown("#### SHAP")
+        st.write("Atribuciones locales para los random forests técnico, de momentum y de riesgo.")
+    with explanation_columns[1].container(border=True):
+        st.markdown("#### LIME")
+        st.write("Contraste local para casos representativos de compra, venta, veto y desacuerdo.")
+    with explanation_columns[2].container(border=True):
+        st.markdown("#### Evidencia LLM")
+        st.write("Justificación breve, identificadores permitidos y limitaciones declaradas.")
+
+    st.markdown("### Casos representativos explicados con LIME")
+    cases = pd.DataFrame(artifacts.lime_cases["cases"])
+    selection = artifacts.lime_cases["selection"]
+    labels = {
+        "strongest_buy": "Compra más intensa",
+        "strongest_sell": "Venta más intensa",
+        "highest_risk_veto": "Mayor veto de riesgo",
+        "largest_disagreement": "Mayor desacuerdo",
+    }
+    selected_case = st.selectbox("Caso", list(selection), format_func=lambda value: labels[value])
+    matching = cases.loc[cases["case_type"] == selected_case]
+    first = matching.iloc[0]
+    case_columns = st.columns(3)
+    case_columns[0].metric("Fecha", first["date"])
+    case_columns[1].metric("Acción", ACTION_NAMES[first["action"]])
+    case_columns[2].metric("Puntuación", f"{first['score_before_veto']:.3f}")
     for _, case in matching.iterrows():
-        with st.expander(f"Agente {case['agent_id']}"):
-            st.dataframe(pd.DataFrame(case["attributions"]), width="stretch", hide_index=True)
+        with st.expander(f"Agente {case['agent_id']}", expanded=case["agent_id"] == "technical"):
+            frame = pd.DataFrame(case["attributions"]).sort_values("contribution")
+            figure = px.bar(
+                frame,
+                x="contribution",
+                y="feature",
+                color="contribution",
+                color_continuous_scale="RdYlGn",
+                orientation="h",
+                labels={"contribution": "Contribución LIME", "feature": "Variable"},
+            )
+            figure.update_coloraxes(showscale=False)
+            st.plotly_chart(figure, width="stretch")
 
-st.divider()
-st.caption(
-    "Artefacto académico experimental. No constituye asesoramiento financiero ni está preparado "
-    "para ejecutar operaciones reales."
+elif page == "Metodología":
+    render_header(
+        "Metodología y reproducibilidad",
+        "Separación temporal estricta, configuración versionada y límites explícitos.",
+    )
+    timeline = st.columns(3)
+    with timeline[0].container(border=True):
+        st.markdown("**2015–2019 · Entrenamiento inicial**")
+        st.caption("Solo información anterior a cada predicción.")
+    with timeline[1].container(border=True):
+        st.markdown("**2020–2022 · Validación**")
+        st.caption("Walk-forward expansivo y congelación posterior.")
+    with timeline[2].container(border=True):
+        st.markdown("**2023–2024 · Test final**")
+        st.caption("Apertura única y resultados sin reajuste.")
+
+    st.markdown("### Configuración del coordinador")
+    weights = pd.DataFrame(
+        {
+            "Agente": list(config.coordinator.weights),
+            "Peso": list(config.coordinator.weights.values()),
+        }
+    )
+    weights["Agente"] = (
+        weights["Agente"]
+        .map(ROLE_NAMES)
+        .fillna(weights["Agente"].str.replace("_", " ").str.title())
+    )
+    weight_figure = px.bar(
+        weights,
+        x="Peso",
+        y="Agente",
+        orientation="h",
+        color="Peso",
+        color_continuous_scale="Tealgrn",
+    )
+    weight_figure.update_coloraxes(showscale=False)
+    weight_figure.update_layout(height=360, margin=dict(l=10, r=10, t=20, b=10))
+    st.plotly_chart(weight_figure, width="stretch")
+
+    method_columns = st.columns(2)
+    with method_columns[0]:
+        st.markdown("### Garantías aplicadas")
+        st.markdown(
+            "- Auditoría de fechas máximas de entrenamiento.\n"
+            "- Coste de 10 puntos básicos por cambio de exposición.\n"
+            "- Caché determinista de respuestas LLM.\n"
+            "- Validación de referencias contra el paquete de entrada.\n"
+            "- El LLM no ejecuta operaciones directamente."
+        )
+    with method_columns[1]:
+        st.markdown("### Limitaciones")
+        st.markdown(
+            "- Sin noticias históricas verificadas en esta versión.\n"
+            "- Un único activo y régimen de mercado limitado.\n"
+            "- Sin posiciones cortas ni apalancamiento.\n"
+            "- No se demuestra superioridad frente a los baselines.\n"
+            "- Uso académico; no es un sistema de inversión."
+        )
+
+    st.markdown("### Coste y reproducción")
+    cost_columns = st.columns(4)
+    cost_columns[0].metric("Piloto", "$0,008")
+    cost_columns[1].metric("Validación", "$0,602")
+    cost_columns[2].metric("Test final", "$0,401")
+    cost_columns[3].metric("Total estimado", "$1,011")
+    st.code(
+        "uv sync --extra dashboard\nuv run streamlit run app/streamlit_app.py",
+        language="bash",
+    )
+
+st.markdown(
+    "<div class='footer'>Artefacto académico experimental · No constituye asesoramiento "
+    "financiero ni está preparado para operar con capital real.</div>",
+    unsafe_allow_html=True,
 )

@@ -87,6 +87,28 @@ uv run qqq-agents hybrid-final-test --confirm-frozen-spec --provider openai
 uv run streamlit run app/streamlit_app.py
 ```
 
+## Demo web
+
+La aplicacion incluye un conjunto ligero de resultados congelados en `demo_data/`. Por ello, puede
+abrirse nada mas clonar el repositorio sin descargar QQQ, reentrenar modelos ni configurar una
+clave de API. La interfaz ofrece seis vistas: introduccion, arquitectura, resultados, explorador
+de decisiones, explicabilidad y metodologia.
+
+```bash
+uv sync --extra dashboard
+uv run streamlit run app/streamlit_app.py
+```
+
+Si existen artefactos locales completos, la aplicacion los utiliza de forma preferente. Para
+forzar el paquete publico de demostracion:
+
+```bash
+QQQ_DASHBOARD_DATA_ROOT=demo_data uv run streamlit run app/streamlit_app.py
+```
+
+`requirements.txt` y `.streamlit/config.toml` dejan preparada la aplicacion para un despliegue de
+Streamlit basado en GitHub. La demo publica no realiza llamadas a OpenAI ni contiene credenciales.
+
 Los datos generados no se versionan. Los comandos y la configuracion permiten reconstruirlos.
 El piloto LLM solo utiliza decisiones del periodo de validacion, almacena las respuestas en cache
 y aplica el limite de gasto configurado antes de realizar llamadas. La accion final sigue siendo
@@ -104,6 +126,7 @@ docs/                    Especificacion y decisiones metodologicas
 src/qqq_agents/          Codigo fuente instalable
 tests/                   Pruebas automatizadas
 artifacts/               Modelos, trazas, metricas y figuras generadas
+demo_data/               Resultados congelados y seguros para la demo publica
 ```
 
 ## Advertencia

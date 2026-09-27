@@ -1,9 +1,12 @@
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from qqq_agents.dashboard.data import load_dashboard_artifacts, parse_attribution_cell
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_parse_attribution_cell_requires_a_list() -> None:
@@ -72,3 +75,12 @@ def test_dashboard_loader_reads_expected_artifacts(tmp_path) -> None:
     assert artifacts.final_quantitative_metrics["quantitative_multiagent"]["sharpe_ratio"] == 0.9
     assert artifacts.final_hybrid_metrics["hybrid_multiagent"]["sharpe_ratio"] == 0.9
     assert artifacts.final_hybrid_strategy.loc[pd.Timestamp("2022-01-07"), "equity"] == 1.0
+
+
+def test_versioned_demo_bundle_is_self_contained() -> None:
+    artifacts = load_dashboard_artifacts(ROOT / "demo_data")
+
+    assert len(artifacts.final_hybrid_decisions) == 105
+    assert artifacts.final_hybrid_metrics["test_period_consulted"] is True
+    assert artifacts.final_quantitative_metrics["quantitative_multiagent"]["sharpe_ratio"] > 0
+    assert artifacts.lime_cases["test_period_consulted"] is False

@@ -1,0 +1,60 @@
+{
+  "baselines": {
+    "buy_and_hold": {
+      "annualized_return": 0.3829723037543402,
+      "annualized_volatility": 0.18018029967276583,
+      "cumulative_return": 0.9245753413645061,
+      "directional_accuracy": 0.6442307692307693,
+      "market_exposure": 0.9904761904761905,
+      "maximum_drawdown": -0.09823241949481509,
+      "position_changes": 1.0,
+      "sharpe_ratio": 1.8939284633715465,
+      "total_turnover": 1.0
+    },
+    "single_logistic_agent": {
+      "annualized_return": 0.16549202570641608,
+      "annualized_volatility": 0.13245934683260707,
+      "cumulative_return": 0.3623780503539449,
+      "directional_accuracy": 0.5192307692307693,
+      "market_exposure": 0.4857142857142857,
+      "maximum_drawdown": -0.0892508669727432,
+      "position_changes": 30.0,
+      "sharpe_ratio": 1.2231403787843305,
+      "total_turnover": 30.0
+    },
+    "sma_50_200": {
+      "annualized_return": 0.33526270631577315,
+      "annualized_volatility": 0.16851801271060246,
+      "cumulative_return": 0.7928674534384879,
+      "directional_accuracy": 0.6153846153846154,
+      "market_exposure": 0.9047619047619048,
+      "maximum_drawdown": -0.09823241949481476,
+      "position_changes": 1.0,
+      "sharpe_ratio": 1.8035055649365854,
+      "total_turnover": 1.0
+    }
+  },
+  "decision_counts": {
+    "BUY": 13,
+    "HOLD": 87,
+    "SELL": 5
+  },
+  "period": {
+    "end": "2024-12-31",
+    "start": "2023-01-01"
+  },
+  "personality": "conservative",
+  "quantitative_multiagent": {
+    "annualized_return": 0.10849416961778835,
+    "annualized_volatility": 0.12387630006753744,
+    "cumulative_return": 0.2311956837797562,
+    "directional_accuracy": 0.5192307692307693,
+    "market_exposure": 0.5428571428571428,
+    "maximum_drawdown": -0.15709047002844156,
+    "position_changes": 5.0,
+    "sharpe_ratio": 0.893834392174561,
+    "total_turnover": 5.0
+  },
+  "risk_veto_count": 8,
+  "test_period_consulted": true
+}

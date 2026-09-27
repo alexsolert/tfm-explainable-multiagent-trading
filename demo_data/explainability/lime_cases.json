@@ -1,0 +1,503 @@
+{
+  "cases": [
+    {
+      "action": "BUY",
+      "agent_id": "technical",
+      "attributions": [
+        {
+          "contribution": -0.0847760681635663,
+          "feature": "distance_sma_200",
+          "method": "lime",
+          "value": 0.1250705446027178
+        },
+        {
+          "contribution": 0.020074739026037028,
+          "feature": "macd_histogram",
+          "method": "lime",
+          "value": -0.1765305899195652
+        },
+        {
+          "contribution": -0.01767354653601184,
+          "feature": "ema_spread_12_26",
+          "method": "lime",
+          "value": 0.0109465873449854
+        },
+        {
+          "contribution": 0.007462847799858666,
+          "feature": "rsi_14",
+          "method": "lime",
+          "value": 56.75621507235429
+        },
+        {
+          "contribution": -0.006329350296509373,
+          "feature": "macd_signal",
+          "method": "lime",
+          "value": 4.142826341964877
+        }
+      ],
+      "case_type": "strongest_buy",
+      "date": "2021-09-10",
+      "model_version": "technical-rf-through-2020-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.3739278980164262
+    },
+    {
+      "action": "BUY",
+      "agent_id": "momentum",
+      "attributions": [
+        {
+          "contribution": -0.028800384983337347,
+          "feature": "return_1d",
+          "method": "lime",
+          "value": -0.0075894065522069
+        },
+        {
+          "contribution": -0.023109754924172783,
+          "feature": "log_return_1d",
+          "method": "lime",
+          "value": -0.0076183526469044
+        },
+        {
+          "contribution": -0.017491824375367632,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.0100157995688198
+        },
+        {
+          "contribution": 0.016490601891307875,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": 0.0246510388197527
+        },
+        {
+          "contribution": 0.01634974770566717,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 1.1478776376200328
+        }
+      ],
+      "case_type": "strongest_buy",
+      "date": "2021-09-10",
+      "model_version": "momentum-rf-through-2020-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.3739278980164262
+    },
+    {
+      "action": "BUY",
+      "agent_id": "risk",
+      "attributions": [
+        {
+          "contribution": -0.21837548017885008,
+          "feature": "atr_14_pct",
+          "method": "lime",
+          "value": 0.0088595521813341
+        },
+        {
+          "contribution": 0.09407911451583942,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.0100157995688198
+        },
+        {
+          "contribution": -0.04569886140344444,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": 0.0246510388197527
+        },
+        {
+          "contribution": -0.030228251242831544,
+          "feature": "drawdown_252",
+          "method": "lime",
+          "value": -0.0144457956642596
+        },
+        {
+          "contribution": -0.015672072197387116,
+          "feature": "volatility_20",
+          "method": "lime",
+          "value": 0.1076871521616289
+        }
+      ],
+      "case_type": "strongest_buy",
+      "date": "2021-09-10",
+      "model_version": "risk-rf-through-2020-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.3739278980164262
+    },
+    {
+      "action": "SELL",
+      "agent_id": "technical",
+      "attributions": [
+        {
+          "contribution": -0.11834713376340271,
+          "feature": "distance_sma_200",
+          "method": "lime",
+          "value": 0.1771086804109116
+        },
+        {
+          "contribution": -0.05197435654776381,
+          "feature": "distance_sma_20",
+          "method": "lime",
+          "value": -0.0456195041205854
+        },
+        {
+          "contribution": -0.03617460881175305,
+          "feature": "rsi_14",
+          "method": "lime",
+          "value": 43.18395928774017
+        },
+        {
+          "contribution": -0.03167055142936073,
+          "feature": "distance_sma_50",
+          "method": "lime",
+          "value": -0.0034190171963359
+        },
+        {
+          "contribution": -0.028874619047889263,
+          "feature": "ema_spread_12_26",
+          "method": "lime",
+          "value": 0.0067178657891313
+        }
+      ],
+      "case_type": "strongest_sell",
+      "date": "2020-09-11",
+      "model_version": "technical-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.273013581674019
+    },
+    {
+      "action": "SELL",
+      "agent_id": "momentum",
+      "attributions": [
+        {
+          "contribution": -0.055726835641949315,
+          "feature": "log_return_1d",
+          "method": "lime",
+          "value": -0.0069643120529452
+        },
+        {
+          "contribution": -0.04550088060288331,
+          "feature": "return_1d",
+          "method": "lime",
+          "value": -0.0069401174306406
+        },
+        {
+          "contribution": 0.007408234272956981,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.0590099019484159
+        },
+        {
+          "contribution": -0.0073800195793250175,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 0.6891116536006736
+        },
+        {
+          "contribution": -0.005704351011729955,
+          "feature": "momentum_60",
+          "method": "lime",
+          "value": 0.1120607484841542
+        }
+      ],
+      "case_type": "strongest_sell",
+      "date": "2020-09-11",
+      "model_version": "momentum-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.273013581674019
+    },
+    {
+      "action": "SELL",
+      "agent_id": "risk",
+      "attributions": [
+        {
+          "contribution": 0.11654165335445422,
+          "feature": "atr_14_pct",
+          "method": "lime",
+          "value": 0.0310725508400792
+        },
+        {
+          "contribution": 0.09659186278558546,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.0590099019484159
+        },
+        {
+          "contribution": 0.022670617644573374,
+          "feature": "drawdown_252",
+          "method": "lime",
+          "value": -0.1067185372438755
+        },
+        {
+          "contribution": 0.019869995630686216,
+          "feature": "volatility_20",
+          "method": "lime",
+          "value": 0.3240813461377348
+        },
+        {
+          "contribution": -0.007808876848606776,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": -0.0074506131926238
+        }
+      ],
+      "case_type": "strongest_sell",
+      "date": "2020-09-11",
+      "model_version": "risk-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.273013581674019
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "technical",
+      "attributions": [
+        {
+          "contribution": -0.053458828541532444,
+          "feature": "distance_sma_20",
+          "method": "lime",
+          "value": -0.1394802632854549
+        },
+        {
+          "contribution": -0.037542855973987835,
+          "feature": "rsi_14",
+          "method": "lime",
+          "value": 35.46468831557564
+        },
+        {
+          "contribution": 0.032229255784330814,
+          "feature": "macd_signal",
+          "method": "lime",
+          "value": -9.292638045763152
+        },
+        {
+          "contribution": 0.03201146880374106,
+          "feature": "ema_spread_12_26",
+          "method": "lime",
+          "value": -0.06292450163117
+        },
+        {
+          "contribution": -0.02813827992896716,
+          "feature": "distance_sma_50",
+          "method": "lime",
+          "value": -0.2060612508071726
+        }
+      ],
+      "case_type": "highest_risk_veto",
+      "date": "2020-03-20",
+      "model_version": "technical-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.254838922749482
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "momentum",
+      "attributions": [
+        {
+          "contribution": 0.0826096064160753,
+          "feature": "momentum_60",
+          "method": "lime",
+          "value": -0.1940891006772284
+        },
+        {
+          "contribution": -0.055265301023260514,
+          "feature": "log_return_1d",
+          "method": "lime",
+          "value": -0.0399639640241042
+        },
+        {
+          "contribution": -0.051051495353199625,
+          "feature": "return_1d",
+          "method": "lime",
+          "value": -0.0391759372387627
+        },
+        {
+          "contribution": -0.0064175435462261125,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 0.4908779423734519
+        },
+        {
+          "contribution": 0.0040114671193827445,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.1125090033320681
+        }
+      ],
+      "case_type": "highest_risk_veto",
+      "date": "2020-03-20",
+      "model_version": "momentum-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.254838922749482
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "risk",
+      "attributions": [
+        {
+          "contribution": 0.14154088657232297,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": -0.258696199532895
+        },
+        {
+          "contribution": 0.11198309158662832,
+          "feature": "atr_14_pct",
+          "method": "lime",
+          "value": 0.0792284010504884
+        },
+        {
+          "contribution": 0.09754251935034935,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": -0.1125090033320681
+        },
+        {
+          "contribution": 0.02802991325325014,
+          "feature": "drawdown_252",
+          "method": "lime",
+          "value": -0.2796858762208275
+        },
+        {
+          "contribution": 0.0193079394192185,
+          "feature": "volatility_20",
+          "method": "lime",
+          "value": 0.8591231704380407
+        }
+      ],
+      "case_type": "highest_risk_veto",
+      "date": "2020-03-20",
+      "model_version": "risk-rf-through-2019-12-31",
+      "risk_veto_triggered": true,
+      "score_before_veto": -0.254838922749482
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "technical",
+      "attributions": [
+        {
+          "contribution": -0.11794616479819922,
+          "feature": "distance_sma_200",
+          "method": "lime",
+          "value": 0.1251174441384834
+        },
+        {
+          "contribution": 0.047994692746910574,
+          "feature": "rsi_14",
+          "method": "lime",
+          "value": 68.94872068814524
+        },
+        {
+          "contribution": 0.03968938163530277,
+          "feature": "distance_sma_20",
+          "method": "lime",
+          "value": 0.0232732902047319
+        },
+        {
+          "contribution": -0.018560500912376453,
+          "feature": "ema_spread_12_26",
+          "method": "lime",
+          "value": 0.0157748717199472
+        },
+        {
+          "contribution": -0.01388797384002293,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 1.01183652912837
+        }
+      ],
+      "case_type": "largest_disagreement",
+      "date": "2020-01-03",
+      "model_version": "technical-rf-through-2019-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.1771444044172499
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "momentum",
+      "attributions": [
+        {
+          "contribution": -0.05715730728393665,
+          "feature": "log_return_1d",
+          "method": "lime",
+          "value": -0.0092021557535444
+        },
+        {
+          "contribution": -0.044309010839643496,
+          "feature": "return_1d",
+          "method": "lime",
+          "value": -0.0091599454926464
+        },
+        {
+          "contribution": -0.018677335922117264,
+          "feature": "momentum_5",
+          "method": "lime",
+          "value": 0.0018240650414227
+        },
+        {
+          "contribution": -0.015122204229708551,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": 0.0603385318086342
+        },
+        {
+          "contribution": -0.004106896000342105,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 1.01183652912837
+        }
+      ],
+      "case_type": "largest_disagreement",
+      "date": "2020-01-03",
+      "model_version": "momentum-rf-through-2019-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.1771444044172499
+    },
+    {
+      "action": "HOLD",
+      "agent_id": "risk",
+      "attributions": [
+        {
+          "contribution": -0.1850138286246179,
+          "feature": "atr_14_pct",
+          "method": "lime",
+          "value": 0.0080703304048914
+        },
+        {
+          "contribution": -0.05646916596025887,
+          "feature": "momentum_20",
+          "method": "lime",
+          "value": 0.0603385318086342
+        },
+        {
+          "contribution": 0.012181849852500495,
+          "feature": "return_1d",
+          "method": "lime",
+          "value": -0.0091599454926464
+        },
+        {
+          "contribution": 0.010591346720125672,
+          "feature": "volume_zscore_20",
+          "method": "lime",
+          "value": 1.01183652912837
+        },
+        {
+          "contribution": -0.008713637530289418,
+          "feature": "drawdown_252",
+          "method": "lime",
+          "value": -0.0091599454926464
+        }
+      ],
+      "case_type": "largest_disagreement",
+      "date": "2020-01-03",
+      "model_version": "risk-rf-through-2019-12-31",
+      "risk_veto_triggered": false,
+      "score_before_veto": 0.1771444044172499
+    }
+  ],
+  "selection": {
+    "highest_risk_veto": "2020-03-20",
+    "largest_disagreement": "2020-01-03",
+    "strongest_buy": "2021-09-10",
+    "strongest_sell": "2020-09-11"
+  },
+  "test_period_consulted": false
+}

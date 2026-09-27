@@ -1,0 +1,27 @@
+{
+  "decision_counts": {
+    "BUY": 9,
+    "HOLD": 144,
+    "SELL": 4
+  },
+  "hybrid_multiagent": {
+    "annualized_return": 0.13110026808638042,
+    "annualized_volatility": 0.15741315045918622,
+    "cumulative_return": 0.450548263128012,
+    "directional_accuracy": 0.5641025641025641,
+    "market_exposure": 0.535031847133758,
+    "maximum_drawdown": -0.12921840227457027,
+    "position_changes": 8.0,
+    "sharpe_ratio": 0.8623675711454415,
+    "total_turnover": 8.0
+  },
+  "llm_estimated_cost_usd": 0.6016005,
+  "llm_incremental_estimated_cost_usd": 0,
+  "period": {
+    "end": "2022-12-31",
+    "start": "2020-01-01"
+  },
+  "period_name": "validation",
+  "risk_veto_count": 23,
+  "test_period_consulted": false
+}
