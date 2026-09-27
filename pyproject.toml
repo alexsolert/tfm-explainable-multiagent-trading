@@ -13,9 +13,11 @@ dependencies = [
   "joblib>=1.4",
   "numpy>=2.0",
   "pandas>=2.2",
+  "plotly>=6.0",
   "pydantic>=2.10",
   "pyyaml>=6.0",
   "scikit-learn>=1.6",
+  "streamlit>=1.43",
   "yfinance>=0.2.54",
 ]
 
@@ -30,10 +32,7 @@ llm = [
   "openai>=1.68",
   "python-dotenv>=1.1",
 ]
-dashboard = [
-  "plotly>=6.0",
-  "streamlit>=1.43",
-]
+dashboard = []
 dev = [
   "pytest>=8.3",
   "pytest-cov>=6.0",
