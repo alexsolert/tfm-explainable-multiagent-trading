@@ -25,7 +25,13 @@ FEATURE_COLUMNS = (
     "volume_zscore_20",
 )
 
-TARGET_COLUMNS = ("forward_return", "future_min_return", "target_up", "target_risk")
+TARGET_COLUMNS = (
+    "target_end_date",
+    "forward_return",
+    "future_min_return",
+    "target_up",
+    "target_risk",
+)
 
 
 def _rsi(close: pd.Series, window: int = 14) -> pd.Series:
@@ -88,6 +94,9 @@ def build_features(
     volume_std = result["volume"].rolling(20).std()
     result["volume_zscore_20"] = (result["volume"] - volume_mean) / volume_std
 
+    result["target_end_date"] = pd.Series(result.index, index=result.index).shift(
+        -prediction_horizon
+    )
     result["forward_return"] = close.shift(-prediction_horizon) / close - 1
     future_paths = pd.concat(
         [close.shift(-step) / close - 1 for step in range(1, prediction_horizon + 1)],

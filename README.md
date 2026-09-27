@@ -50,6 +50,9 @@ uv run qqq-agents prepare
 
 # Comprobar los baselines solo durante el periodo de desarrollo (hasta 2022)
 uv run qqq-agents baselines
+
+# Entrenar los tres agentes cuantitativos sin consultar 2023-2024
+uv run qqq-agents train-quant
 ```
 
 Los datos generados no se versionan. Los comandos y la configuracion permiten reconstruirlos.

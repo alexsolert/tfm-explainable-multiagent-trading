@@ -13,6 +13,7 @@ from qqq_agents.backtesting.engine import run_backtest
 from qqq_agents.config import load_config
 from qqq_agents.data import download_market_data, load_market_data
 from qqq_agents.features import build_features, sample_decisions
+from qqq_agents.training import train_quantitative_agents
 
 
 def _download(config_path: Path) -> None:
@@ -83,6 +84,13 @@ def _baselines(config_path: Path, through: str) -> None:
     print(f"Saved development baseline artifacts to {artifact_dir}")
 
 
+def _train_quant(config_path: Path, through: str) -> None:
+    config = load_config(config_path)
+    frame = pd.read_csv(config.data.processed_path, index_col="date", parse_dates=["date"])
+    manifest = train_quantitative_agents(frame, config=config, cutoff=through)
+    print(json.dumps(manifest, indent=2, sort_keys=True))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -102,6 +110,14 @@ def main() -> None:
         default="2022-12-31",
         help="Inclusive final date; defaults to the end of the development period.",
     )
+    training_parser = subparsers.add_parser(
+        "train-quant", help="Fit quantitative agents on leakage-safe development observations."
+    )
+    training_parser.add_argument(
+        "--through",
+        default="2022-12-31",
+        help="Latest allowed feature and target date.",
+    )
     args = parser.parse_args()
 
     if args.command == "download":
@@ -110,6 +126,8 @@ def main() -> None:
         _prepare(args.config)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
+    elif args.command == "train-quant":
+        _train_quant(args.config, args.through)
 
 
 if __name__ == "__main__":

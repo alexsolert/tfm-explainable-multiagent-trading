@@ -37,6 +37,7 @@ def test_incomplete_future_targets_remain_missing() -> None:
 
     assert features["target_up"].tail(5).isna().all()
     assert features["target_risk"].tail(5).isna().all()
+    assert features["target_end_date"].tail(5).isna().all()
 
 
 def test_weekly_sampling_keeps_real_market_dates() -> None:
