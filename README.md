@@ -46,6 +46,14 @@ y
 Las métricas, auditorías de modelos y frontera de políticas se versionan de forma compacta en
 [`research_results/v5`](research_results/v5), sin incluir el histórico de mercado.
 
+La V6 amplía el histórico hasta 1999, incorpora un agente de retorno multi-horizonte y estudia
+exposición gestionada entre el 25 % y el 125 %. Compara diez políticas con financiación y costes
+explícitos, y mantiene una ablación de tendencia para comprobar si los modelos de retorno añaden
+valor incremental. El diseño se describe en
+[`docs/experiments/v6-risk-managed-exposure-protocol.md`](docs/experiments/v6-risk-managed-exposure-protocol.md)
+y sus resultados en
+[`docs/experiments/2026-09-28-v6-retrospective-assessment.md`](docs/experiments/2026-09-28-v6-retrospective-assessment.md).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.

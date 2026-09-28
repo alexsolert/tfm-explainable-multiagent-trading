@@ -1,0 +1,68 @@
+version: "6.0-risk-managed-exposure"
+
+period:
+  evaluation_start: "2004-01-01"
+  selection_end: "2022-12-31"
+  retrospective_start: "2023-01-01"
+  development_end: "2026-08-31"
+  minimum_training_rows: 750
+
+risk:
+  horizons: [5, 10, 20]
+  volatility_multipliers: [1.25, 1.50, 1.75]
+  horizon_weights: [0.50, 0.30, 0.20]
+  activation_auc: 0.53
+
+return_model:
+  horizons: [5, 10, 20]
+  horizon_weights: [0.20, 0.30, 0.50]
+  candidates:
+    - ridge
+    - histogram_gradient_boosting
+  validation_splits: 3
+  purge_sessions: 20
+  random_seed: 42
+
+models:
+  classifier_candidates:
+    - logistic
+    - histogram_gradient_boosting
+  volatility_candidates:
+    - har_ridge
+    - histogram_gradient_boosting
+    - trailing_realized
+    - vix
+  validation_splits: 3
+  purge_sessions: 20
+  random_seed: 42
+
+allocation:
+  maximum_exposures: [1.00, 1.10, 1.15, 1.20, 1.25]
+  target_volatility: 0.25
+  minimum_exposure: 0.25
+  bearish_trend_cap: 0.70
+  defensive_cap: 0.45
+  risk_low: 1.00
+  risk_high: 1.75
+  risk_sensitivity: 0.35
+  favourable_trend: 0.75
+  minimum_return_score: 0.00
+  maximum_daily_reentry: 0.10
+  minimum_rebalance: 0.05
+  borrowing_spread_bps: 150
+
+selection:
+  minimum_return_improvement: 0.00
+  maximum_drawdown_ratio: 1.00
+  minimum_sharpe_improvement: 0.00
+
+data:
+  start: "1999-03-10"
+  end: "2026-09-01"
+  raw_directory: data/raw/v6
+  processed_path: data/processed/v6_daily.csv
+  assets:
+    qqq: QQQ
+    spy: SPY
+    vix: ^VIX
+  cash_yield_ticker: ^IRX

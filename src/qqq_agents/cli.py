@@ -63,6 +63,8 @@ from qqq_agents.v4 import (
     run_v4_walk_forward,
 )
 from qqq_agents.v5 import build_v5_research_frame, load_v5_config, run_v5_walk_forward
+from qqq_agents.v6 import build_v6_research_frame, load_v6_config, run_v6_walk_forward
+from qqq_agents.v6.backtest import run_exposure_backtest
 
 
 def _download(config_path: Path) -> None:
@@ -649,6 +651,242 @@ def _v5_prepare(v5_config_path: Path) -> None:
             indent=2,
         )
     )
+
+
+def _v6_download(v6_config_path: Path) -> None:
+    config = load_v6_config(v6_config_path)
+    config.data.raw_directory.mkdir(parents=True, exist_ok=True)
+    observations: dict[str, int] = {}
+    for alias, ticker in config.data.assets.items():
+        frame = download_market_data(
+            ticker=ticker,
+            start=config.data.start,
+            end=config.data.end,
+            destination=config.data.raw_directory / f"{alias}.csv",
+            auto_adjust=True,
+        )
+        observations[alias] = len(frame)
+    cash = download_yield_data(
+        ticker=config.data.cash_yield_ticker,
+        start=config.data.start,
+        end=config.data.end,
+        destination=config.data.raw_directory / "cash_yield.csv",
+    )
+    observations["cash_yield"] = len(cash)
+    print(json.dumps({"observations": observations}, indent=2, sort_keys=True))
+
+
+def _v6_prepare(v6_config_path: Path) -> None:
+    config = load_v6_config(v6_config_path)
+    markets = {
+        alias: load_market_data(config.data.raw_directory / f"{alias}.csv")
+        for alias in config.data.assets
+    }
+    cash_yield = load_yield_data(config.data.raw_directory / "cash_yield.csv")
+    frame = build_v6_research_frame(
+        markets,
+        cash_yield,
+        risk_config=config.risk,
+        return_config=config.return_model,
+    )
+    config.data.processed_path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(config.data.processed_path, index=True)
+    print(
+        json.dumps(
+            {
+                "rows": len(frame),
+                "start": str(frame.index.min().date()),
+                "end": str(frame.index.max().date()),
+                "destination": str(config.data.processed_path),
+            },
+            indent=2,
+        )
+    )
+
+
+def _v6_development(config_path: Path, v6_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v6_config(v6_config_path)
+    date_columns = [
+        *(f"target_end_date_{horizon}" for horizon in config.risk.horizons),
+        *(f"vol_target_end_date_{horizon}" for horizon in config.risk.horizons),
+        *(
+            f"return_target_end_date_{horizon}"
+            for horizon in config.return_model.horizons
+        ),
+    ]
+    frame = pd.read_csv(
+        config.data.processed_path,
+        index_col="date",
+        parse_dates=["date", *date_columns],
+    )
+    result = run_v6_walk_forward(frame, app_config=app_config, v6_config=config)
+    output = Path("artifacts/v6_development")
+    output.mkdir(parents=True, exist_ok=True)
+    result.decisions.to_csv(output / "decisions.csv", index=True)
+    result.training_audit.to_csv(output / "training_audit.csv", index=False)
+    result.model_leaderboard.to_csv(output / "model_leaderboard.csv", index=False)
+    result.policy_selection.leaderboard.to_csv(output / "policy_leaderboard.csv", index=False)
+    equity = pd.DataFrame(
+        {
+            f"policy_{name}": value.history["equity"]
+            for name, value in result.policies.items()
+        }
+    )
+    for name, value in result.baselines.items():
+        equity[name] = value.history["equity"]
+    equity.to_csv(output / "equity.csv", index=True)
+
+    def enriched_metrics(backtest, start: str, end: str) -> dict[str, float]:
+        history = backtest.history.loc[start:end]
+        metrics = calculate_metrics(
+            returns=history["strategy_return"],
+            turnover=history["turnover"],
+            asset_returns=history["asset_return"],
+            positions=history["applied_position"],
+            periods_per_year=252,
+        )
+        returns = history["strategy_return"].dropna()
+        threshold = returns.quantile(0.05)
+        metrics["expected_shortfall_5"] = float(returns.loc[returns <= threshold].mean())
+        metrics["financing_cost_total"] = float(history["financing_cost"].sum())
+        metrics["days_above_one"] = int((history["applied_position"] > 1).sum())
+        return metrics
+
+    periods = {
+        "selection": (config.period.evaluation_start, config.period.selection_end),
+        "retrospective_assessment": (
+            config.period.retrospective_start,
+            config.period.development_end,
+        ),
+    }
+    subperiods = {}
+    for period_name, (start, end) in periods.items():
+        subperiods[period_name] = {
+            "period": {"start": start, "end": end},
+            "selected_policy": result.selected_policy,
+            "v6_selected": enriched_metrics(result.strategy, start, end),
+            "policies": {
+                name: enriched_metrics(value, start, end)
+                for name, value in result.policies.items()
+            },
+            "baselines": {
+                name: enriched_metrics(value, start, end)
+                for name, value in result.baselines.items()
+            },
+        }
+
+    retrospective_start = config.period.retrospective_start
+    retrospective_end = config.period.development_end
+    selected_detail = result.policy_details[result.selected_policy]
+    aligned_close = frame.loc[selected_detail.index, "close"]
+    aligned_cash = frame.loc[selected_detail.index, "cash_return"]
+    maximum_exposure = float(selected_detail["maximum_exposure"].iloc[0])
+    robustness: dict[str, object] = {
+        "retrospective_block_bootstrap": {},
+        "deflated_sharpe": {},
+        "candidate_family_cscv": {},
+        "cost_sensitivity": {},
+        "borrowing_spread_sensitivity": {},
+        "execution_delay": {},
+    }
+    retrospective_returns = result.strategy.history.loc[
+        retrospective_start:retrospective_end, "strategy_return"
+    ]
+    robustness["retrospective_block_bootstrap"] = {
+        name: circular_block_bootstrap_difference(
+            retrospective_returns,
+            value.history.loc[retrospective_start:retrospective_end, "strategy_return"],
+            samples=5_000,
+            block_length=20,
+            random_seed=config.return_model.random_seed,
+            periods_per_year=252,
+        )
+        for name, value in result.baselines.items()
+    }
+    robustness["deflated_sharpe"] = deflated_sharpe_probability(
+        retrospective_returns,
+        trials=len(result.policies),
+        periods_per_year=252,
+    )
+    robustness["candidate_family_cscv"] = probability_of_backtest_overfitting(
+        return_family({**result.policies, **result.baselines}).loc[
+            retrospective_start:retrospective_end
+        ],
+        partitions=8,
+        periods_per_year=252,
+    )
+    for cost in (0, 5, 10, 20, 30):
+        backtest = run_exposure_backtest(
+            aligned_close,
+            selected_detail["desired_position"],
+            maximum_exposure=maximum_exposure,
+            transaction_cost_bps=cost,
+            borrowing_spread_bps=config.allocation.borrowing_spread_bps,
+            cash_return=aligned_cash,
+        )
+        robustness["cost_sensitivity"][str(cost)] = enriched_metrics(  # type: ignore[index]
+            backtest, retrospective_start, retrospective_end
+        )
+    for spread in (50, 100, 150, 250, 400):
+        backtest = run_exposure_backtest(
+            aligned_close,
+            selected_detail["desired_position"],
+            maximum_exposure=maximum_exposure,
+            transaction_cost_bps=app_config.experiment.transaction_cost_bps,
+            borrowing_spread_bps=spread,
+            cash_return=aligned_cash,
+        )
+        robustness["borrowing_spread_sensitivity"][str(spread)] = enriched_metrics(  # type: ignore[index]
+            backtest, retrospective_start, retrospective_end
+        )
+    for delay in (1, 2):
+        position = selected_detail["desired_position"].shift(delay - 1).fillna(0.0)
+        backtest = run_exposure_backtest(
+            aligned_close,
+            position,
+            maximum_exposure=maximum_exposure,
+            transaction_cost_bps=app_config.experiment.transaction_cost_bps,
+            borrowing_spread_bps=config.allocation.borrowing_spread_bps,
+            cash_return=aligned_cash,
+        )
+        robustness["execution_delay"][str(delay)] = enriched_metrics(  # type: ignore[index]
+            backtest, retrospective_start, retrospective_end
+        )
+    payload = {
+        "version": config.version,
+        "period": {
+            "start": config.period.evaluation_start,
+            "end": config.period.development_end,
+        },
+        "retrospective_assessment_is_not_holdout": True,
+        "selected_policy": result.selected_policy,
+        "selection_constraints_met": result.policy_selection.constraints_met,
+        "v6_selected": result.strategy.metrics,
+        "policies": {name: value.metrics for name, value in result.policies.items()},
+        "baselines": {name: value.metrics for name, value in result.baselines.items()},
+        "subperiods": subperiods,
+        "stress_periods": {
+            name: {
+                "period": {"start": start, "end": end},
+                "v6_selected": enriched_metrics(result.strategy, start, end),
+                "buy_and_hold": enriched_metrics(
+                    result.baselines["buy_and_hold"], start, end
+                ),
+            }
+            for name, (start, end) in {
+                "global_financial_crisis": ("2007-10-01", "2009-06-30"),
+                "covid_2020": ("2020-02-01", "2020-06-30"),
+                "bear_2022": ("2022-01-01", "2022-12-31"),
+            }.items()
+        },
+        "robustness": robustness,
+    }
+    (output / "metrics.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(f"Saved V6 development artifacts to {output}")
 
 
 def _v5_development(config_path: Path, v5_config_path: Path) -> None:
@@ -1386,6 +1624,12 @@ def main() -> None:
         default=Path("configs/v5.yaml"),
         help="Path to the independent multi-frequency V5 research configuration.",
     )
+    parser.add_argument(
+        "--v6-config",
+        type=Path,
+        default=Path("configs/v6.yaml"),
+        help="Path to the long-history risk-managed V6 configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
@@ -1453,6 +1697,18 @@ def main() -> None:
         "--through",
         required=True,
         help="Inclusive market-data date in YYYY-MM-DD format.",
+    )
+    subparsers.add_parser(
+        "v6-download",
+        help="Download the long-history core snapshots used by V6.",
+    )
+    subparsers.add_parser(
+        "v6-prepare",
+        help="Build V6 risk, return and volatility targets.",
+    )
+    subparsers.add_parser(
+        "v6-development",
+        help="Run V6 expanding walk-forward selection and robustness diagnostics.",
     )
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
@@ -1596,6 +1852,12 @@ def main() -> None:
         _freeze_v5(args.v5_config)
     elif args.command == "v5-shadow":
         _v5_shadow(args.config, args.v5_config, args.through)
+    elif args.command == "v6-download":
+        _v6_download(args.v6_config)
+    elif args.command == "v6-prepare":
+        _v6_prepare(args.v6_config)
+    elif args.command == "v6-development":
+        _v6_development(args.config, args.v6_config)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":
