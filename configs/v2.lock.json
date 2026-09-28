@@ -1,0 +1,17 @@
+{
+  "config": "configs/v2.yaml",
+  "frozen_files": {
+    "configs/v2.yaml": "f7f5dd57d269fc3213bdbdb9377c76482aec6936bafb459d494e3ae54b3158b3",
+    "docs/experiments/v2-protocol.md": "445d072bd9c72eb36acc093cb03911471c127c2f11f1a4b8c8920dcc2e6d3102",
+    "src/qqq_agents/data/context.py": "97e465dfda0374358363fdcda7f04f87e5b825ce95533d3cec2167dc5fa3dc80",
+    "src/qqq_agents/features/technical.py": "8c381773351cfd9bfd6ca551200b6d8ff02811cb353fc1e048d9cd0714281a25",
+    "src/qqq_agents/v2/allocation.py": "433893b75a7f9299da35be3d0178bb9f2c61e77ba2bb0675c37e020ecc461ac4",
+    "src/qqq_agents/v2/config.py": "b05542597570dfeffecca5eeecbe16b29d1dc4a8ce2ee87804097e0aae93d19f",
+    "src/qqq_agents/v2/diagnostics.py": "318dc6d160835e4c241943f54d9675b1150f50a780888c03345450582e22d435",
+    "src/qqq_agents/v2/evaluation.py": "e20fba0d4ba10349df127f8f268068fb3f5b13a0da6cd9c7fa06e43a33225f2f",
+    "src/qqq_agents/v2/models.py": "624ca306a696496a609a8f7d709b52660fd10907f4684358537ee8bd9105a517"
+  },
+  "protected_snapshot_end": "2026-08-31",
+  "protected_test_opened": true,
+  "sha256": "f7f5dd57d269fc3213bdbdb9377c76482aec6936bafb459d494e3ae54b3158b3"
+}

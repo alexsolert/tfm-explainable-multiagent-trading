@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,10 +14,15 @@ import pandas as pd
 from qqq_agents.backtesting.baselines import buy_and_hold
 from qqq_agents.backtesting.engine import run_backtest
 from qqq_agents.config import load_config
-from qqq_agents.data import download_market_data, load_market_data
+from qqq_agents.data import (
+    build_context_features,
+    download_context_bundle,
+    download_market_data,
+    load_market_data,
+)
 from qqq_agents.evaluation import run_quantitative_walk_forward
 from qqq_agents.explainability import generate_lime_cases
-from qqq_agents.features import build_features, sample_decisions
+from qqq_agents.features import build_features, rebuild_decision_interval_labels, sample_decisions
 from qqq_agents.llm import (
     AutoGenOpenAIClient,
     CachedLLMClient,
@@ -35,6 +41,11 @@ from qqq_agents.llm.pilot import (
     load_pilot_cases,
 )
 from qqq_agents.training import train_quantitative_agents
+from qqq_agents.v2 import load_v2_config, run_v2_walk_forward
+from qqq_agents.v2.diagnostics import (
+    circular_block_bootstrap_difference,
+    probability_of_backtest_overfitting,
+)
 
 
 def _download(config_path: Path) -> None:
@@ -61,6 +72,316 @@ def _prepare(config_path: Path) -> None:
     config.data.processed_path.parent.mkdir(parents=True, exist_ok=True)
     decisions.to_csv(config.data.processed_path, index=True)
     print(f"Saved {len(decisions)} weekly observations to {config.data.processed_path}")
+
+
+def _v2_download_context(v2_config_path: Path) -> None:
+    config = load_v2_config(v2_config_path)
+    if pd.Timestamp(config.context.end) > pd.Timestamp(config.development.protected_test_start):
+        raise ValueError("Context download would open the protected V2 test period")
+    observations = download_context_bundle(
+        tickers=config.context.tickers,
+        start=config.context.start,
+        end=config.context.end,
+        destination=config.context.raw_directory,
+    )
+    print(json.dumps({"protected_test_consulted": False, "observations": observations}, indent=2))
+
+
+def _v2_prepare(config_path: Path, v2_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    v2_config = load_v2_config(v2_config_path)
+    market = load_market_data(app_config.data.raw_path)
+    if market.index.max() >= pd.Timestamp(v2_config.development.protected_test_start):
+        raise ValueError("Primary market snapshot includes the protected V2 test period")
+    features = build_features(
+        market,
+        prediction_horizon=app_config.experiment.prediction_horizon_sessions,
+        risk_event_threshold=app_config.experiment.risk_event_threshold,
+    )
+    context = build_context_features(
+        market,
+        tickers=v2_config.context.tickers,
+        raw_directory=v2_config.context.raw_directory,
+    )
+    weekly = sample_decisions(
+        features.join(context),
+        app_config.experiment.decision_frequency,
+    )
+    weekly = rebuild_decision_interval_labels(
+        weekly,
+        market["close"],
+        risk_event_threshold=app_config.experiment.risk_event_threshold,
+    )
+    v2_config.context.processed_path.parent.mkdir(parents=True, exist_ok=True)
+    weekly.to_csv(v2_config.context.processed_path, index=True)
+    available = [name for name in v2_config.features.regime if name in weekly.columns]
+    print(
+        json.dumps(
+            {
+                "rows": len(weekly),
+                "destination": str(v2_config.context.processed_path),
+                "regime_features": available,
+                "protected_test_consulted": False,
+            },
+            indent=2,
+        )
+    )
+
+
+def _config_digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+V2_FROZEN_PATHS = (
+    Path("configs/v2.yaml"),
+    Path("src/qqq_agents/v2/config.py"),
+    Path("src/qqq_agents/v2/models.py"),
+    Path("src/qqq_agents/v2/allocation.py"),
+    Path("src/qqq_agents/v2/diagnostics.py"),
+    Path("src/qqq_agents/v2/evaluation.py"),
+    Path("src/qqq_agents/data/context.py"),
+    Path("src/qqq_agents/features/technical.py"),
+    Path("docs/experiments/v2-protocol.md"),
+)
+
+
+def _v2_file_digests() -> dict[str, str]:
+    return {str(path): _config_digest(path) for path in V2_FROZEN_PATHS}
+
+
+def _save_v2_result(
+    result,
+    *,
+    app_config,
+    v2_config,
+    output_dir: Path,
+    start: str,
+    end: str,
+    protected_test_consulted: bool,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    result.decisions.to_csv(output_dir / "decisions.csv", index=True)
+    result.strategy.history.to_csv(output_dir / "strategy.csv", index=True)
+    result.training_audit.to_csv(output_dir / "training_audit.csv", index=False)
+    result.model_leaderboard.to_csv(output_dir / "model_leaderboard.csv", index=False)
+    equity = pd.DataFrame({"v2_multiagent": result.strategy.history["equity"]})
+    for name, value in result.baselines.items():
+        equity[name] = value.history["equity"]
+    for name, value in result.ablations.items():
+        equity[f"ablation_{name}"] = value.history["equity"]
+    equity.to_csv(output_dir / "equity.csv", index=True)
+
+    close = result.strategy.history["close"]
+    cost_scenarios = {}
+    for cost in v2_config.evaluation.transaction_cost_scenarios_bps:
+        scenario = run_backtest(
+            close,
+            result.decisions["desired_position"],
+            transaction_cost_bps=cost,
+        )
+        cost_scenarios[str(cost)] = scenario.metrics
+    bootstrap = {
+        name: circular_block_bootstrap_difference(
+            result.strategy.history["strategy_return"],
+            value.history["strategy_return"],
+            samples=v2_config.evaluation.bootstrap_samples,
+            block_length=v2_config.evaluation.bootstrap_block_weeks,
+            random_seed=v2_config.evaluation.random_seed,
+        )
+        for name, value in result.baselines.items()
+    }
+    return_candidates = {"v2_multiagent": result.strategy.history["strategy_return"]}
+    return_candidates.update(
+        {name: value.history["strategy_return"] for name, value in result.baselines.items()}
+    )
+    return_candidates.update(
+        {
+            f"ablation_{name}": value.history["strategy_return"]
+            for name, value in result.ablations.items()
+        }
+    )
+    overfitting = probability_of_backtest_overfitting(pd.DataFrame(return_candidates))
+    sma_metrics = result.baselines["sma_50_200"].metrics
+    vs_sma = bootstrap["sma_50_200"]
+    multiagent_eligible = (
+        result.strategy.metrics["sharpe_ratio"] > sma_metrics["sharpe_ratio"]
+        and vs_sma["probability_strategy_outperforms"] >= 0.90
+    )
+    evaluated_recommendation = {
+        "champion": "v2_multiagent" if multiagent_eligible else "sma_50_200",
+        "challenger": "sma_50_200" if multiagent_eligible else "v2_multiagent",
+        "multiagent_promotion_eligible": multiagent_eligible,
+        "rule": "Promote V2 only if its Sharpe exceeds SMA and bootstrap P(outperformance) >= 0.90",
+    }
+    deployment_recommendation = evaluated_recommendation
+    if protected_test_consulted:
+        development_path = Path("artifacts/v2_development/metrics.json")
+        if not development_path.exists():
+            raise FileNotFoundError("Protected reporting requires frozen development metrics")
+        development_metrics = json.loads(development_path.read_text(encoding="utf-8"))
+        deployment_recommendation = development_metrics["deployment_recommendation"]
+    payload = {
+        "version": v2_config.version,
+        "period": {"start": start, "end": end},
+        "protected_test_consulted": protected_test_consulted,
+        "v2_multiagent": result.strategy.metrics,
+        "baselines": {name: value.metrics for name, value in result.baselines.items()},
+        "ablations": {name: value.metrics for name, value in result.ablations.items()},
+        "cost_scenarios": cost_scenarios,
+        "bootstrap_vs_baselines": bootstrap,
+        "backtest_overfitting": overfitting,
+        "deployment_recommendation": deployment_recommendation,
+        "period_evaluated_recommendation": evaluated_recommendation,
+        "probability_report": result.probability_report,
+        "decision_counts": result.decisions["action"].value_counts().to_dict(),
+        "operation_count": int(result.decisions["operation_executed"].sum()),
+        "exposure_counts": {
+            str(key): int(value)
+            for key, value in result.decisions["desired_position"].value_counts().items()
+        },
+        "transaction_cost_bps": app_config.experiment.transaction_cost_bps,
+    }
+    (output_dir / "metrics.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(f"Saved V2 artifacts to {output_dir}")
+
+
+def _v2_evaluate(
+    config_path: Path,
+    v2_config_path: Path,
+    *,
+    protected: bool,
+) -> None:
+    app_config = load_config(config_path)
+    v2_config = load_v2_config(v2_config_path)
+    source = (
+        Path("data/processed/v2_protected_features.csv")
+        if protected
+        else (
+            v2_config.context.processed_path
+            if v2_config.context.processed_path.exists()
+            else app_config.data.processed_path
+        )
+    )
+    if not source.exists():
+        raise FileNotFoundError(f"Missing V2 data snapshot: {source}")
+    frame = pd.read_csv(source, index_col="date", parse_dates=["date"])
+    if protected:
+        start = v2_config.development.protected_test_start
+        end = v2_config.development.protected_test_end
+        output = Path("artifacts/v2_protected_test")
+    else:
+        start = v2_config.development.start
+        end = v2_config.development.end
+        output = Path("artifacts/v2_development")
+    result = run_v2_walk_forward(
+        frame,
+        app_config=app_config,
+        v2_config=v2_config,
+        start=start,
+        end=end,
+        allow_protected=protected,
+    )
+    _save_v2_result(
+        result,
+        app_config=app_config,
+        v2_config=v2_config,
+        output_dir=output,
+        start=start,
+        end=end,
+        protected_test_consulted=protected,
+    )
+
+
+def _freeze_v2(v2_config_path: Path) -> None:
+    digest = _config_digest(v2_config_path)
+    destination = Path("configs/v2.lock.json")
+    payload = {
+        "config": str(v2_config_path),
+        "sha256": digest,
+        "frozen_files": _v2_file_digests(),
+        "protected_test_opened": False,
+    }
+    destination.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def _verify_v2_lock(v2_config_path: Path) -> None:
+    lock_path = Path("configs/v2.lock.json")
+    if not lock_path.exists():
+        raise SystemExit("Freeze V2 with 'qqq-agents v2-freeze' before opening its protected test")
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    if lock.get("sha256") != _config_digest(v2_config_path):
+        raise SystemExit("configs/v2.yaml changed after its protocol was frozen")
+    expected_files = lock.get("frozen_files", {})
+    current_files = _v2_file_digests()
+    changed = [path for path, digest in expected_files.items() if current_files.get(path) != digest]
+    if changed:
+        raise SystemExit(f"V2 implementation changed after freeze: {changed}")
+
+
+def _open_v2_protected_data(config_path: Path, v2_config_path: Path) -> None:
+    """Download a separate snapshot only after the V2 protocol is frozen."""
+
+    _verify_v2_lock(v2_config_path)
+    app_config = load_config(config_path)
+    v2_config = load_v2_config(v2_config_path)
+    end_exclusive = str(
+        (pd.Timestamp(v2_config.development.protected_test_end) + pd.Timedelta(days=1)).date()
+    )
+    protected_root = Path("data/raw/v2_protected")
+    market = download_market_data(
+        ticker=app_config.data.ticker,
+        start=v2_config.context.start,
+        end=end_exclusive,
+        destination=protected_root / "qqq.csv",
+        auto_adjust=app_config.data.auto_adjust,
+    )
+    context_root = protected_root / "context"
+    observations = download_context_bundle(
+        tickers=v2_config.context.tickers,
+        start=v2_config.context.start,
+        end=end_exclusive,
+        destination=context_root,
+    )
+    features = build_features(
+        market,
+        prediction_horizon=app_config.experiment.prediction_horizon_sessions,
+        risk_event_threshold=app_config.experiment.risk_event_threshold,
+    )
+    context = build_context_features(
+        market,
+        tickers=v2_config.context.tickers,
+        raw_directory=context_root,
+    )
+    weekly = sample_decisions(features.join(context), app_config.experiment.decision_frequency)
+    weekly = rebuild_decision_interval_labels(
+        weekly,
+        market["close"],
+        risk_event_threshold=app_config.experiment.risk_event_threshold,
+    )
+    destination = Path("data/processed/v2_protected_features.csv")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    weekly.to_csv(destination, index=True)
+    lock_path = Path("configs/v2.lock.json")
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    lock["protected_test_opened"] = True
+    lock["protected_snapshot_end"] = v2_config.development.protected_test_end
+    lock_path.write_text(json.dumps(lock, indent=2, sort_keys=True), encoding="utf-8")
+    print(
+        json.dumps(
+            {
+                "qqq_observations": len(market),
+                "context_observations": observations,
+                "weekly_rows": len(weekly),
+                "destination": str(destination),
+                "protected_test_opened": True,
+            },
+            indent=2,
+        )
+    )
 
 
 def _baselines(config_path: Path, through: str) -> None:
@@ -388,9 +709,41 @@ def main() -> None:
         default=Path("configs/base.yaml"),
         help="Path to the experiment YAML configuration.",
     )
+    parser.add_argument(
+        "--v2-config",
+        type=Path,
+        default=Path("configs/v2.yaml"),
+        help="Path to the independent V2 experimental configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
+    subparsers.add_parser(
+        "v2-download-context",
+        help="Download only pre-2025 regime data without opening the protected V2 test.",
+    )
+    subparsers.add_parser(
+        "v2-prepare",
+        help="Build compact QQQ and external-regime features for V2.",
+    )
+    subparsers.add_parser(
+        "v2-development",
+        help="Run calibrated V2 over the diagnostic 2020-2024 development period.",
+    )
+    subparsers.add_parser(
+        "v2-freeze",
+        help="Hash and freeze the V2 specification before downloading protected data.",
+    )
+    v2_open_parser = subparsers.add_parser(
+        "v2-open-protected-data",
+        help="Download 2025-2026 snapshots only after V2 has been frozen.",
+    )
+    v2_open_parser.add_argument("--confirm-frozen-spec", action="store_true")
+    v2_test_parser = subparsers.add_parser(
+        "v2-protected-test",
+        help="Open the frozen 2025-2026 V2 test after explicit confirmation.",
+    )
+    v2_test_parser.add_argument("--confirm-frozen-spec", action="store_true")
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
     )
@@ -496,6 +849,23 @@ def main() -> None:
         _download(args.config)
     elif args.command == "prepare":
         _prepare(args.config)
+    elif args.command == "v2-download-context":
+        _v2_download_context(args.v2_config)
+    elif args.command == "v2-prepare":
+        _v2_prepare(args.config, args.v2_config)
+    elif args.command == "v2-development":
+        _v2_evaluate(args.config, args.v2_config, protected=False)
+    elif args.command == "v2-freeze":
+        _freeze_v2(args.v2_config)
+    elif args.command == "v2-open-protected-data":
+        if not args.confirm_frozen_spec:
+            raise SystemExit("Pass --confirm-frozen-spec to download the protected V2 snapshot")
+        _open_v2_protected_data(args.config, args.v2_config)
+    elif args.command == "v2-protected-test":
+        if not args.confirm_frozen_spec:
+            raise SystemExit("Pass --confirm-frozen-spec to open the protected V2 test")
+        _verify_v2_lock(args.v2_config)
+        _v2_evaluate(args.config, args.v2_config, protected=True)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":

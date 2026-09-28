@@ -15,6 +15,12 @@ el test final 2023-2024. El estado de cumplimiento se resume en
 [`docs/mvp_status.md`](docs/mvp_status.md) y los resultados finales se documentan en
 [`docs/experiments/2026-09-27-final-test.md`](docs/experiments/2026-09-27-final-test.md).
 
+La V2 se desarrolla en paralelo sin reescribir V1. Añade calibración temporal, selección de modelos,
+datos de régimen, posiciones 0/50/100 %, ablaciones y un test 2025–2026 protegido por hash. Su
+protocolo se encuentra en [`docs/experiments/v2-protocol.md`](docs/experiments/v2-protocol.md).
+El resultado de apertura única se documenta en
+[`docs/experiments/2026-09-28-v2-protected-test.md`](docs/experiments/2026-09-28-v2-protected-test.md).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
@@ -85,7 +91,25 @@ uv run qqq-agents hybrid-final-test --confirm-frozen-spec --provider openai
 
 # Abrir el dashboard local
 uv run streamlit run app/streamlit_app.py
+
+# Descargar contexto externo solo hasta 2024 y preparar V2
+uv run qqq-agents v2-download-context
+uv run qqq-agents v2-prepare
+
+# Ejecutar el periodo de desarrollo 2020–2024 sin abrir el test protegido
+uv run qqq-agents v2-development
+
+# Congelar V2 únicamente cuando código, tests y protocolo estén cerrados
+uv run qqq-agents v2-freeze
+
+# Solo después de congelar: descargar y evaluar el snapshot protegido
+uv run qqq-agents v2-open-protected-data --confirm-frozen-spec
+uv run qqq-agents v2-protected-test --confirm-frozen-spec
 ```
+
+El comando `v2-protected-test` exige confirmación explícita y comprueba que el hash de
+`configs/v2.yaml` coincide con el registrado durante la congelación. Los datos 2023–2024 ya se han
+utilizado para diagnosticar V1 y, por tanto, forman parte del desarrollo de V2, no de su test final.
 
 ## Demo web
 

@@ -124,3 +124,33 @@ def sample_decisions(frame: pd.DataFrame, frequency: str = "W-FRI") -> pd.DataFr
     if not isinstance(frame.index, pd.DatetimeIndex):
         raise TypeError("Decision sampling requires a DatetimeIndex")
     return frame.groupby(pd.Grouper(freq=frequency)).tail(1).copy()
+
+
+def rebuild_decision_interval_labels(
+    decisions: pd.DataFrame,
+    daily_close: pd.Series,
+    *,
+    risk_event_threshold: float = -0.03,
+) -> pd.DataFrame:
+    """Align V2 labels exactly with consecutive decision timestamps."""
+
+    result = decisions.copy().sort_index()
+    close = daily_close.sort_index().astype(float)
+    next_dates = pd.Series(result.index, index=result.index).shift(-1)
+    result["target_end_date"] = next_dates
+    result["forward_return"] = result["close"].shift(-1) / result["close"] - 1
+    future_minimum: list[float] = []
+    for current, following in zip(result.index, next_dates, strict=True):
+        if pd.isna(following):
+            future_minimum.append(np.nan)
+            continue
+        path = close.loc[(close.index > current) & (close.index <= following)] / float(
+            result.loc[current, "close"]
+        ) - 1
+        future_minimum.append(float(path.min()) if not path.empty else np.nan)
+    result["future_min_return"] = future_minimum
+    result["target_up"] = (result["forward_return"] > 0).astype("Int8")
+    result.loc[result["forward_return"].isna(), "target_up"] = pd.NA
+    result["target_risk"] = (result["future_min_return"] <= risk_event_threshold).astype("Int8")
+    result.loc[result["future_min_return"].isna(), "target_risk"] = pd.NA
+    return result

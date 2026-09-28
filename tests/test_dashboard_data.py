@@ -84,3 +84,8 @@ def test_versioned_demo_bundle_is_self_contained() -> None:
     assert artifacts.final_hybrid_metrics["test_period_consulted"] is True
     assert artifacts.final_quantitative_metrics["quantitative_multiagent"]["sharpe_ratio"] > 0
     assert artifacts.lime_cases["test_period_consulted"] is False
+    assert artifacts.v2_metrics["protected_test_consulted"] is False
+    assert artifacts.v2_metrics["deployment_recommendation"]["champion"] == "sma_50_200"
+    assert artifacts.v2_model_leaderboard["selected"].any()
+    assert artifacts.v2_protected_metrics["protected_test_consulted"] is True
+    assert artifacts.v2_protected_metrics["deployment_recommendation"]["champion"] == "sma_50_200"

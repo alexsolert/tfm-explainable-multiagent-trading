@@ -19,6 +19,7 @@ LOCAL_ARTIFACTS = ROOT / "artifacts"
 DEMO_ARTIFACTS = ROOT / "demo_data"
 
 COLORS = {
+    "Multiagente V2": "#0f766e",
     "Multiagente híbrido": "#14b8a6",
     "Multiagente cuantitativo": "#38bdf8",
     "Buy & hold": "#f59e0b",
@@ -26,6 +27,7 @@ COLORS = {
     "Agente logístico único": "#fb7185",
 }
 EQUITY_NAMES = {
+    "v2_multiagent": "Multiagente V2",
     "hybrid_multiagent": "Multiagente híbrido",
     "multiagent": "Multiagente cuantitativo",
     "buy_and_hold": "Buy & hold",
@@ -198,18 +200,36 @@ final_strategy = (
     if final_hybrid_metrics is not None
     else final_metrics["quantitative_multiagent"]
 )
+headline_strategy = (
+    artifacts.v2_protected_metrics["v2_multiagent"]
+    if artifacts.v2_protected_metrics is not None
+    else final_strategy
+)
+headline_decisions = (
+    len(artifacts.v2_protected_decisions)
+    if artifacts.v2_protected_decisions is not None
+    else 105
+)
 
 st.sidebar.markdown("# ◈ QQQ Multi-Agent Lab")
 st.sidebar.caption("Framework jerárquico y explicable")
 page = st.sidebar.radio(
     "Navegación",
-    ("Inicio", "Arquitectura", "Resultados", "Decisiones", "Explicabilidad", "Metodología"),
+    (
+        "Inicio",
+        "Arquitectura",
+        "Resultados",
+        "Diagnóstico V2",
+        "Decisiones",
+        "Explicabilidad",
+        "Metodología",
+    ),
     label_visibility="collapsed",
 )
 st.sidebar.divider()
 st.sidebar.markdown(f"**Estado:** {data_mode}")
-st.sidebar.caption("Experimento congelado · Test final 2023–2024")
-st.sidebar.success("MVP completado")
+st.sidebar.caption("V1 · 2023–2024 | V2 protegida · 2025–2026")
+st.sidebar.success("V2 evaluada sin reajuste posterior")
 
 if page == "Inicio":
     st.markdown(
@@ -218,33 +238,35 @@ if page == "Inicio":
           <div class="eyebrow">Trabajo Final de Máster · Alex Soler Trias</div>
           <h1>Un comité de agentes que razona, decide y explica</h1>
           <p>Framework experimental sobre QQQ que combina modelos cuantitativos, agentes LLM y
-          un coordinador jerárquico con veto de riesgo. Cada decisión conserva su evidencia y puede
-          reconstruirse de extremo a extremo.</p>
-          <span class="badge">Long-only</span><span class="badge">Walk-forward</span>
-          <span class="badge">SHAP + LIME</span><span class="badge">LLM con evidencia</span>
+          un coordinador jerárquico. La V2 calibra el riesgo, admite exposición gradual y conserva
+          cada evidencia para reconstruir las decisiones de extremo a extremo.</p>
+          <span class="badge">Long-biased</span><span class="badge">Walk-forward purgado</span>
+          <span class="badge">0 / 50 / 100 %</span><span class="badge">Test protegido</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
     columns = st.columns(4)
-    columns[0].metric("Rentabilidad final", percentage(final_strategy["cumulative_return"]))
-    columns[1].metric("Sharpe", f"{final_strategy['sharpe_ratio']:.3f}")
-    columns[2].metric("Drawdown máximo", percentage(final_strategy["maximum_drawdown"]))
-    columns[3].metric("Decisiones auditadas", "105")
+    columns[0].metric(
+        "Rentabilidad V2 protegida", percentage(headline_strategy["cumulative_return"])
+    )
+    columns[1].metric("Sharpe", f"{headline_strategy['sharpe_ratio']:.3f}")
+    columns[2].metric("Drawdown máximo", percentage(headline_strategy["maximum_drawdown"]))
+    columns[3].metric("Decisiones auditadas", str(headline_decisions))
 
     st.markdown("### Qué demuestra el prototipo")
     demo_columns = st.columns(3)
     with demo_columns[0].container(border=True):
         st.markdown("#### Especialización")
         st.write(
-            "Tres agentes cuantitativos y tres roles LLM analizan tendencia, momentum, riesgo y "
-            "contexto con contratos comunes."
+            "Agentes técnicos, de momentum, riesgo y régimen compiten con modelos sencillos y "
+            "pueden abstenerse cuando su AUC temporal es insuficiente."
         )
     with demo_columns[1].container(border=True):
         st.markdown("#### Coordinación controlada")
         st.write(
-            "Un coordinador determinista agrega señales ponderadas. El LLM aporta contexto, pero "
-            "nunca ejecuta operaciones directamente."
+            "Un coordinador determinista transforma probabilidades calibradas en exposición "
+            "gradual. El LLM nunca ejecuta operaciones directamente."
         )
     with demo_columns[2].container(border=True):
         st.markdown("#### Trazabilidad")
@@ -254,8 +276,9 @@ if page == "Inicio":
         )
 
     st.info(
-        "Hallazgo principal: el sistema funcionó de forma reproducible y explicable, pero no "
-        "superó los baselines financieros en el test final. El resultado se muestra sin reajustes."
+        "Hallazgo protegido: V2 redujo el drawdown frente a Buy & Hold y superó a SMA 50/200, "
+        "pero no superó la rentabilidad ni el Sharpe de Buy & Hold. El resultado se muestra sin "
+        "reajustes posteriores."
     )
 
 elif page == "Arquitectura":
@@ -375,6 +398,202 @@ elif page == "Resultados":
             "2023–2024 se abrió después de documentar la congelación experimental."
         )
 
+elif page == "Diagnóstico V2":
+    render_header(
+        "Diagnóstico y laboratorio V2",
+        "Probabilidades calibradas, exposición gradual, ablaciones y control explícito "
+        "del test protegido.",
+    )
+    if (
+        artifacts.v2_metrics is None
+        or artifacts.v2_decisions is None
+        or artifacts.v2_equity is None
+    ):
+        st.info(
+            "La arquitectura V2 está implementada, pero este paquete de demostración todavía no "
+            "incluye su ejecución. Puede generarse con `qqq-agents v2-development` sin consultar "
+            "el periodo protegido 2025–2026."
+        )
+    else:
+        v2_metrics = artifacts.v2_metrics
+        v2_strategy = v2_metrics["v2_multiagent"]
+        if artifacts.v2_protected_metrics is not None and artifacts.v2_protected_equity is not None:
+            protected = artifacts.v2_protected_metrics
+            protected_strategy = protected["v2_multiagent"]
+            st.success(
+                "Test protegido abierto después de congelar configuración y código: "
+                "2025–agosto de 2026."
+            )
+            st.markdown("### Resultado protegido")
+            protected_columns = st.columns(5)
+            protected_columns[0].metric(
+                "Rentabilidad V2", percentage(protected_strategy["cumulative_return"])
+            )
+            protected_columns[1].metric(
+                "Rentabilidad Buy & Hold",
+                percentage(protected["baselines"]["buy_and_hold"]["cumulative_return"]),
+            )
+            protected_columns[2].metric("Sharpe V2", f"{protected_strategy['sharpe_ratio']:.3f}")
+            protected_columns[3].metric(
+                "Drawdown V2", percentage(protected_strategy["maximum_drawdown"])
+            )
+            protected_columns[4].metric(
+                "Exposición V2", percentage(protected_strategy["market_exposure"])
+            )
+            protected_curves = artifacts.v2_protected_equity.loc[
+                :,
+                [
+                    name
+                    for name in ("v2_multiagent", "buy_and_hold", "sma_50_200")
+                    if name in artifacts.v2_protected_equity
+                ],
+            ]
+            st.plotly_chart(equity_figure(protected_curves), width="stretch")
+            st.info(
+                "V2 supera a SMA y reduce el drawdown frente a Buy & Hold, pero no supera la "
+                "rentabilidad ni el Sharpe de Buy & Hold. La selección congelada en desarrollo "
+                "se conserva y se muestra por separado."
+            )
+            st.divider()
+        else:
+            st.warning(
+                "2020–2024 es desarrollo, no un test final. El periodo protegido todavía no "
+                "se ha incluido en este paquete."
+            )
+        st.markdown("### Resultado de desarrollo · 2020–2024")
+        recommendation = v2_metrics["deployment_recommendation"]
+        if recommendation["multiagent_promotion_eligible"]:
+            st.success("V2 satisface el criterio predefinido de promoción frente a SMA 50/200.")
+        else:
+            st.error(
+                "Resultado de desarrollo: SMA 50/200 conserva el papel de champion y V2 queda "
+                "en shadow mode. La aplicación no oculta ni reajusta este resultado."
+            )
+        metric_columns = st.columns(5)
+        metric_columns[0].metric(
+            "Rentabilidad acumulada", percentage(v2_strategy["cumulative_return"])
+        )
+        metric_columns[1].metric("Sharpe", f"{v2_strategy['sharpe_ratio']:.3f}")
+        metric_columns[2].metric(
+            "Drawdown máximo", percentage(v2_strategy["maximum_drawdown"])
+        )
+        metric_columns[3].metric("Exposición", percentage(v2_strategy["market_exposure"]))
+        metric_columns[4].metric("Operaciones reales", str(v2_metrics["operation_count"]))
+
+        curves = artifacts.v2_equity.loc[
+            :,
+            [
+                name
+                for name in ("v2_multiagent", "buy_and_hold", "sma_50_200")
+                if name in artifacts.v2_equity
+            ],
+        ]
+        st.plotly_chart(equity_figure(curves), width="stretch")
+
+        st.markdown("### Qué componente aporta valor")
+        comparison = {"Multiagente V2": v2_strategy}
+        comparison.update(
+            {
+                EQUITY_NAMES.get(name, name): values
+                for name, values in v2_metrics["baselines"].items()
+            }
+        )
+        comparison.update(
+            {
+                f"Ablación · {name.replace('_', ' ')}": values
+                for name, values in v2_metrics["ablations"].items()
+            }
+        )
+        ablation_table = pd.DataFrame(comparison).T[
+            ["cumulative_return", "sharpe_ratio", "maximum_drawdown", "market_exposure"]
+        ]
+        ablation_table.columns = ["Rentabilidad", "Sharpe", "Drawdown", "Exposición"]
+        st.dataframe(
+            ablation_table.style.format(
+                {
+                    "Rentabilidad": "{:.2%}",
+                    "Sharpe": "{:.3f}",
+                    "Drawdown": "{:.2%}",
+                    "Exposición": "{:.2%}",
+                }
+            ),
+            width="stretch",
+        )
+
+        risk_report = v2_metrics["probability_report"]["risk"]
+        direction_report = v2_metrics["probability_report"]["direction"]
+        diagnostic_columns = st.columns(2)
+        with diagnostic_columns[0]:
+            st.markdown("### Calibración del riesgo")
+            calibration = pd.DataFrame(risk_report["calibration"])
+            calibration_figure = go.Figure()
+            calibration_figure.add_trace(
+                go.Scatter(
+                    x=[0, 1], y=[0, 1], mode="lines", name="Calibración perfecta",
+                    line=dict(color="#94a3b8", dash="dash"),
+                )
+            )
+            calibration_figure.add_trace(
+                go.Scatter(
+                    x=calibration["predicted_probability"],
+                    y=calibration["observed_frequency"],
+                    mode="lines+markers",
+                    name="Agente de riesgo",
+                    marker=dict(size=10, color="#fb7185"),
+                )
+            )
+            calibration_figure.update_layout(
+                xaxis_title="Probabilidad estimada",
+                yaxis_title="Frecuencia observada",
+                height=350,
+                margin=dict(l=10, r=10, t=30, b=10),
+            )
+            st.plotly_chart(calibration_figure, width="stretch")
+        with diagnostic_columns[1]:
+            st.markdown("### Capacidad predictiva")
+            st.metric("AUC direccional", f"{direction_report['auc']:.3f}")
+            st.metric("AUC de riesgo", f"{risk_report['auc']:.3f}")
+            st.metric("Brier de riesgo", f"{risk_report['brier_score']:.3f}")
+            st.metric(
+                "Probabilidad de backtest overfitting",
+                percentage(
+                    v2_metrics["backtest_overfitting"]["probability_of_backtest_overfitting"]
+                ),
+            )
+            st.caption(
+                "La calibración puede mejorar la escala de una probabilidad, pero no crea "
+                "discriminación. Si el AUC temporal es insuficiente, el agente debe abstenerse."
+            )
+
+        yearly_rows = []
+        for year, values in v2_metrics["probability_report"]["by_year"].items():
+            yearly_rows.append(
+                {
+                    "Año": year,
+                    "AUC dirección": values["direction"]["auc"],
+                    "AUC riesgo": values["risk"]["auc"],
+                    "Riesgo observado": values["risk"]["positive_rate"],
+                    "Riesgo estimado": values["risk"]["mean_probability"],
+                }
+            )
+        st.markdown("### Estabilidad anual")
+        st.dataframe(
+            pd.DataFrame(yearly_rows).set_index("Año").style.format("{:.3f}"),
+            width="stretch",
+        )
+
+        if artifacts.v2_model_leaderboard is not None:
+            selected = artifacts.v2_model_leaderboard.loc[
+                artifacts.v2_model_leaderboard["selected"]
+            ].copy()
+            selected["cutoff"] = selected["cutoff"].dt.strftime("%Y-%m-%d")
+            st.markdown("### Modelos seleccionados exclusivamente con datos pasados")
+            st.dataframe(
+                selected[["cutoff", "agent_id", "candidate", "raw_auc", "raw_brier"]],
+                width="stretch",
+                hide_index=True,
+            )
+
 elif page == "Decisiones":
     render_header(
         "Explorador de decisiones",
@@ -397,7 +616,11 @@ elif page == "Decisiones":
     selected_date = st.selectbox("Fecha de decisión", dates, format_func=format_date)
     hybrid_row = hybrid.loc[selected_date]
     quant_row = quantitative.loc[selected_date]
-    summary = st.columns(5)
+    prior_positions = hybrid["desired_position"].shift(1).fillna(0.0)
+    executed = bool(
+        hybrid.loc[selected_date, "desired_position"] != prior_positions.loc[selected_date]
+    )
+    summary = st.columns(6)
     summary[0].metric(
         "Acción cuantitativa", ACTION_NAMES[hybrid_row["quantitative_proposed_action"]]
     )
@@ -405,11 +628,17 @@ elif page == "Decisiones":
     summary[2].metric("Puntuación", f"{hybrid_row['score_before_veto']:.3f}")
     summary[3].metric("Posición", "Invertido" if hybrid_row["desired_position"] else "Efectivo")
     summary[4].metric("Personalidad", str(hybrid_row["personality"]).capitalize())
+    summary[5].metric("Operación efectiva", "Sí" if executed else "No")
 
     if hybrid_row["action"] != hybrid_row["quantitative_proposed_action"]:
         st.info("El comité LLM modificó la recomendación cuantitativa en esta fecha.")
     if bool(hybrid_row["risk_veto_triggered"]):
         st.warning("El agente de riesgo activó el veto y bloqueó una nueva exposición.")
+
+    st.caption(
+        "El dictamen BUY/HOLD/SELL se muestra por separado de la operación efectiva. Una señal "
+        "BUY repetida mientras la cartera ya está invertida no genera una nueva transacción."
+    )
 
     contribution_columns = [
         "technical_contribution",

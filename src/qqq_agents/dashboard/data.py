@@ -26,6 +26,13 @@ class DashboardArtifacts:
     final_hybrid_metrics: dict[str, Any] | None
     final_hybrid_decisions: pd.DataFrame | None
     final_hybrid_strategy: pd.DataFrame | None
+    v2_metrics: dict[str, Any] | None
+    v2_decisions: pd.DataFrame | None
+    v2_equity: pd.DataFrame | None
+    v2_model_leaderboard: pd.DataFrame | None
+    v2_protected_metrics: dict[str, Any] | None
+    v2_protected_decisions: pd.DataFrame | None
+    v2_protected_equity: pd.DataFrame | None
 
 
 def _optional_bundle(
@@ -102,6 +109,28 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
     final_hybrid_metrics, final_hybrid_decisions, final_hybrid_strategy = _optional_bundle(
         final_hybrid_paths
     )
+    v2_root = artifact_root / "v2_development"
+    v2_paths = {
+        "metrics": v2_root / "metrics.json",
+        "decisions": v2_root / "decisions.csv",
+        "strategy": v2_root / "equity.csv",
+    }
+    v2_metrics, v2_decisions, v2_equity = _optional_bundle(v2_paths)
+    v2_leaderboard_path = v2_root / "model_leaderboard.csv"
+    v2_model_leaderboard = (
+        pd.read_csv(v2_leaderboard_path, parse_dates=["cutoff"])
+        if v2_leaderboard_path.exists()
+        else None
+    )
+    v2_protected_root = artifact_root / "v2_protected_test"
+    v2_protected_paths = {
+        "metrics": v2_protected_root / "metrics.json",
+        "decisions": v2_protected_root / "decisions.csv",
+        "strategy": v2_protected_root / "equity.csv",
+    }
+    v2_protected_metrics, v2_protected_decisions, v2_protected_equity = _optional_bundle(
+        v2_protected_paths
+    )
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
@@ -117,4 +146,11 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         final_hybrid_metrics=final_hybrid_metrics,
         final_hybrid_decisions=final_hybrid_decisions,
         final_hybrid_strategy=final_hybrid_strategy,
+        v2_metrics=v2_metrics,
+        v2_decisions=v2_decisions,
+        v2_equity=v2_equity,
+        v2_model_leaderboard=v2_model_leaderboard,
+        v2_protected_metrics=v2_protected_metrics,
+        v2_protected_decisions=v2_protected_decisions,
+        v2_protected_equity=v2_protected_equity,
     )

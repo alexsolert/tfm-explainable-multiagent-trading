@@ -1,0 +1,69 @@
+version: "2.0"
+
+development:
+  start: "2020-01-01"
+  end: "2024-12-31"
+  protected_test_start: "2025-01-01"
+  protected_test_end: "2026-08-31"
+  minimum_training_rows: 156
+
+models:
+  candidates:
+    - logistic
+    - random_forest
+    - histogram_gradient_boosting
+  calibration_splits: 3
+  embargo_decisions: 1
+  probability_clip: 0.001
+  adaptive_weight_shrinkage: 0.50
+  minimum_direction_auc: 0.52
+  minimum_risk_auc: 0.58
+
+allocation:
+  exposure_levels: [0.0, 0.5, 1.0]
+  bearish_probability_threshold: 0.40
+  moderate_risk_probability: 0.20
+  severe_risk_probability: 0.35
+
+features:
+  technical:
+    - distance_sma_50
+    - distance_sma_200
+    - ema_spread_12_26
+    - rsi_14
+  momentum:
+    - momentum_5
+    - momentum_20
+    - momentum_60
+  risk:
+    - volatility_20
+    - atr_14_pct
+    - drawdown_252
+  regime:
+    - spy_momentum_20
+    - iwm_momentum_20
+    - smh_momentum_20
+    - tlt_momentum_20
+    - qqq_relative_spy_20
+    - vix_level
+    - vix_change_20
+    - breadth_proxy_20
+
+context:
+  start: "2014-01-01"
+  end: "2025-01-01"
+  raw_directory: data/raw/context
+  processed_path: data/processed/v2_features.csv
+  tickers:
+    spy: SPY
+    iwm: IWM
+    smh: SMH
+    tlt: TLT
+    vix: ^VIX
+
+evaluation:
+  transaction_cost_scenarios_bps: [10.0, 25.0, 50.0]
+  calibration_bins: 5
+  bootstrap_samples: 10000
+  bootstrap_block_weeks: 4
+  random_seed: 42

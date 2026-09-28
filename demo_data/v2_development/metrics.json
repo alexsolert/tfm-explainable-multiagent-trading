@@ -1,0 +1,465 @@
+{
+  "ablations": {
+    "binary_calibrated_risk": {
+      "annualized_return": 0.17678302368536913,
+      "annualized_volatility": 0.22993965301993438,
+      "cumulative_return": 1.270915973823611,
+      "directional_accuracy": 0.5670498084291188,
+      "market_exposure": 0.9809160305343512,
+      "maximum_drawdown": -0.3505559170432454,
+      "position_changes": 9.0,
+      "sharpe_ratio": 0.8235894245418811,
+      "total_turnover": 9.0
+    },
+    "directional_only": {
+      "annualized_return": 0.19549236309032425,
+      "annualized_volatility": 0.23136662895072882,
+      "cumulative_return": 1.4587626097794315,
+      "directional_accuracy": 0.5747126436781609,
+      "market_exposure": 0.9961832061068703,
+      "maximum_drawdown": -0.3505559170432454,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.888329703487335,
+      "total_turnover": 1.0
+    },
+    "risk_only": {
+      "annualized_return": 0.1349043183693308,
+      "annualized_volatility": 0.22244196478835443,
+      "cumulative_return": 0.8919517647943194,
+      "directional_accuracy": 0.5095785440613027,
+      "market_exposure": 0.9293893129770993,
+      "maximum_drawdown": -0.3505559170432453,
+      "position_changes": 29.0,
+      "sharpe_ratio": 0.6805329855209188,
+      "total_turnover": 15.0
+    },
+    "structural_long": {
+      "annualized_return": 0.19549236309032425,
+      "annualized_volatility": 0.23136662895072882,
+      "cumulative_return": 1.4587626097794315,
+      "directional_accuracy": 0.5747126436781609,
+      "market_exposure": 0.9961832061068703,
+      "maximum_drawdown": -0.3505559170432454,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.888329703487335,
+      "total_turnover": 1.0
+    },
+    "uncalibrated_risk": {
+      "annualized_return": 0.14681207655363937,
+      "annualized_volatility": 0.19720553988192174,
+      "cumulative_return": 0.9941115641142801,
+      "directional_accuracy": 0.5478927203065134,
+      "market_exposure": 0.8225190839694656,
+      "maximum_drawdown": -0.27250240654702507,
+      "position_changes": 40.0,
+      "sharpe_ratio": 0.7940530409506305,
+      "total_turnover": 24.0
+    }
+  },
+  "backtest_overfitting": {
+    "combinations": 70,
+    "in_sample_winner_counts": {
+      "ablation_binary_calibrated_risk": 0,
+      "ablation_directional_only": 0,
+      "ablation_risk_only": 0,
+      "ablation_structural_long": 0,
+      "ablation_uncalibrated_risk": 0,
+      "buy_and_hold": 12,
+      "single_logistic_agent": 0,
+      "sma_50_200": 58,
+      "v2_multiagent": 0
+    },
+    "partitions": 8,
+    "probability_of_backtest_overfitting": 0.02857142857142857
+  },
+  "baselines": {
+    "buy_and_hold": {
+      "annualized_return": 0.19549236309032425,
+      "annualized_volatility": 0.23136662895072882,
+      "cumulative_return": 1.4587626097794315,
+      "directional_accuracy": 0.5747126436781609,
+      "market_exposure": 0.9961832061068703,
+      "maximum_drawdown": -0.3505559170432454,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.888329703487335,
+      "total_turnover": 1.0
+    },
+    "single_logistic_agent": {
+      "annualized_return": 0.0483697305132893,
+      "annualized_volatility": 0.19312039902070322,
+      "cumulative_return": 0.26870713929169554,
+      "directional_accuracy": 0.5172413793103449,
+      "market_exposure": 0.6946564885496184,
+      "maximum_drawdown": -0.33575223149440925,
+      "position_changes": 36.0,
+      "sharpe_ratio": 0.34105092063763026,
+      "total_turnover": 36.0
+    },
+    "sma_50_200": {
+      "annualized_return": 0.21180882896506303,
+      "annualized_volatility": 0.1905674565977648,
+      "cumulative_return": 1.6325678065240843,
+      "directional_accuracy": 0.5900383141762452,
+      "market_exposure": 0.7824427480916031,
+      "maximum_drawdown": -0.27250240654702507,
+      "position_changes": 5.0,
+      "sharpe_ratio": 1.1051850202912936,
+      "total_turnover": 5.0
+    }
+  },
+  "bootstrap_vs_baselines": {
+    "buy_and_hold": {
+      "ci_95_lower": -0.11771164163344294,
+      "ci_95_upper": -0.019019190735331894,
+      "mean_difference": -0.06144252357233518,
+      "probability_strategy_outperforms": 0.0005
+    },
+    "single_logistic_agent": {
+      "ci_95_lower": -0.027833033848158873,
+      "ci_95_upper": 0.22654117374408858,
+      "mean_difference": 0.089210787901395,
+      "probability_strategy_outperforms": 0.9279
+    },
+    "sma_50_200": {
+      "ci_95_lower": -0.20280519312799633,
+      "ci_95_upper": 0.05492740018692237,
+      "mean_difference": -0.07507376013812597,
+      "probability_strategy_outperforms": 0.1216
+    }
+  },
+  "cost_scenarios": {
+    "10.0": {
+      "annualized_return": 0.1349043183693308,
+      "annualized_volatility": 0.22244196478835443,
+      "cumulative_return": 0.8919517647943194,
+      "directional_accuracy": 0.5095785440613027,
+      "market_exposure": 0.9293893129770993,
+      "maximum_drawdown": -0.3505559170432453,
+      "position_changes": 29.0,
+      "sharpe_ratio": 0.6805329855209188,
+      "total_turnover": 15.0
+    },
+    "25.0": {
+      "annualized_return": 0.12987081752523477,
+      "annualized_volatility": 0.22240134452904697,
+      "cumulative_return": 0.8500502632630169,
+      "directional_accuracy": 0.5095785440613027,
+      "market_exposure": 0.9293893129770993,
+      "maximum_drawdown": -0.3505559170432452,
+      "position_changes": 29.0,
+      "sharpe_ratio": 0.6605780457788927,
+      "total_turnover": 15.0
+    },
+    "50.0": {
+      "annualized_return": 0.12152239050581182,
+      "annualized_volatility": 0.22236562163423632,
+      "cumulative_return": 0.7821958681583012,
+      "directional_accuracy": 0.5095785440613027,
+      "market_exposure": 0.9293893129770993,
+      "maximum_drawdown": -0.35055591704324507,
+      "position_changes": 29.0,
+      "sharpe_ratio": 0.6272133994048995,
+      "total_turnover": 15.0
+    }
+  },
+  "decision_counts": {
+    "BUY": 14,
+    "HOLD": 234,
+    "SELL": 14
+  },
+  "deployment_recommendation": {
+    "challenger": "v2_multiagent",
+    "champion": "sma_50_200",
+    "multiagent_promotion_eligible": false,
+    "rule": "Promote V2 only if its Sharpe exceeds SMA and bootstrap P(outperformance) >= 0.90"
+  },
+  "exposure_counts": {
+    "0.0": 4,
+    "0.5": 27,
+    "1.0": 231
+  },
+  "operation_count": 28,
+  "period": {
+    "end": "2024-12-31",
+    "start": "2020-01-01"
+  },
+  "probability_report": {
+    "by_year": {
+      "2020": {
+        "direction": {
+          "auc": 0.5,
+          "brier_score": 0.25,
+          "calibration": [
+            {
+              "count": 53,
+              "observed_frequency": 0.5849056603773585,
+              "predicted_probability": 0.5
+            }
+          ],
+          "expected_calibration_error": 0.08490566037735847,
+          "f1": 0.7380952380952381,
+          "mean_probability": 0.5,
+          "observations": 53,
+          "positive_rate": 0.5849056603773585,
+          "precision": 0.5849056603773585,
+          "recall": 1.0
+        },
+        "risk": {
+          "auc": 0.48055555555555557,
+          "brier_score": 0.13313382466366294,
+          "calibration": [
+            {
+              "count": 50,
+              "observed_frequency": 0.16,
+              "predicted_probability": 0.10503761753154221
+            },
+            {
+              "count": 3,
+              "observed_frequency": 0.0,
+              "predicted_probability": 0.22985596147602663
+            }
+          ],
+          "expected_calibration_error": 0.06486201901605602,
+          "f1": 0.0,
+          "mean_probability": 0.11210280681141871,
+          "observations": 53,
+          "positive_rate": 0.1509433962264151,
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      },
+      "2021": {
+        "direction": {
+          "auc": 0.65,
+          "brier_score": 0.2446721174762397,
+          "calibration": [
+            {
+              "count": 52,
+              "observed_frequency": 0.5769230769230769,
+              "predicted_probability": 0.6244967552202803
+            }
+          ],
+          "expected_calibration_error": 0.04757367829720338,
+          "f1": 0.7317073170731707,
+          "mean_probability": 0.6244967552202803,
+          "observations": 52,
+          "positive_rate": 0.5769230769230769,
+          "precision": 0.5769230769230769,
+          "recall": 1.0
+        },
+        "risk": {
+          "auc": 0.46875,
+          "brier_score": 0.13313925608230634,
+          "calibration": [
+            {
+              "count": 52,
+              "observed_frequency": 0.15384615384615385,
+              "predicted_probability": 0.10263823513495464
+            }
+          ],
+          "expected_calibration_error": 0.051207918711199216,
+          "f1": 0.0,
+          "mean_probability": 0.10263823513495464,
+          "observations": 52,
+          "positive_rate": 0.15384615384615385,
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      },
+      "2022": {
+        "direction": {
+          "auc": 0.5651515151515152,
+          "brier_score": 0.3012509639519906,
+          "calibration": [
+            {
+              "count": 52,
+              "observed_frequency": 0.4230769230769231,
+              "predicted_probability": 0.6641275802502593
+            }
+          ],
+          "expected_calibration_error": 0.24105065717333624,
+          "f1": 0.5945945945945946,
+          "mean_probability": 0.6641275802502593,
+          "observations": 52,
+          "positive_rate": 0.4230769230769231,
+          "precision": 0.4230769230769231,
+          "recall": 1.0
+        },
+        "risk": {
+          "auc": 0.4439393939393939,
+          "brier_score": 0.31473791868302065,
+          "calibration": [
+            {
+              "count": 52,
+              "observed_frequency": 0.4230769230769231,
+              "predicted_probability": 0.15740925606219397
+            }
+          ],
+          "expected_calibration_error": 0.2656676670147291,
+          "f1": 0.0,
+          "mean_probability": 0.15740925606219397,
+          "observations": 52,
+          "positive_rate": 0.4230769230769231,
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      },
+      "2023": {
+        "direction": {
+          "auc": 0.565359477124183,
+          "brier_score": 0.23233201333103015,
+          "calibration": [
+            {
+              "count": 47,
+              "observed_frequency": 0.6595744680851063,
+              "predicted_probability": 0.5556109801524297
+            },
+            {
+              "count": 5,
+              "observed_frequency": 0.6,
+              "predicted_probability": 0.6109547995532861
+            }
+          ],
+          "expected_calibration_error": 0.0950203448192737,
+          "f1": 0.7710843373493976,
+          "mean_probability": 0.5609325012486658,
+          "observations": 52,
+          "positive_rate": 0.6538461538461539,
+          "precision": 0.6530612244897959,
+          "recall": 0.9411764705882353
+        },
+        "risk": {
+          "auc": 0.4893617021276596,
+          "brier_score": 0.10290995801351964,
+          "calibration": [
+            {
+              "count": 30,
+              "observed_frequency": 0.1,
+              "predicted_probability": 0.1577531617315269
+            },
+            {
+              "count": 22,
+              "observed_frequency": 0.09090909090909091,
+              "predicted_probability": 0.28139390096971384
+            }
+          ],
+          "expected_calibration_error": 0.11390885910152906,
+          "f1": 0.0,
+          "mean_probability": 0.2100627052553752,
+          "observations": 52,
+          "positive_rate": 0.09615384615384616,
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      },
+      "2024": {
+        "direction": {
+          "auc": 0.6889952153110048,
+          "brier_score": 0.22550744634850922,
+          "calibration": [
+            {
+              "count": 32,
+              "observed_frequency": 0.59375,
+              "predicted_probability": 0.5665788419535505
+            },
+            {
+              "count": 20,
+              "observed_frequency": 0.7,
+              "predicted_probability": 0.6183988776866076
+            }
+          ],
+          "expected_calibration_error": 0.04810575968758139,
+          "f1": 0.7764705882352941,
+          "mean_probability": 0.5865096249278032,
+          "observations": 52,
+          "positive_rate": 0.6346153846153846,
+          "precision": 0.6346153846153846,
+          "recall": 1.0
+        },
+        "risk": {
+          "auc": 0.4630681818181819,
+          "brier_score": 0.12992946742550837,
+          "calibration": [
+            {
+              "count": 46,
+              "observed_frequency": 0.13043478260869565,
+              "predicted_probability": 0.14842112703924915
+            },
+            {
+              "count": 6,
+              "observed_frequency": 0.3333333333333333,
+              "predicted_probability": 0.23793911019240677
+            }
+          ],
+          "expected_calibration_error": 0.02691802274328885,
+          "f1": 0.0,
+          "mean_probability": 0.15875012509538275,
+          "observations": 52,
+          "positive_rate": 0.15384615384615385,
+          "precision": 0.0,
+          "recall": 0.0
+        }
+      }
+    },
+    "direction": {
+      "auc": 0.4696096096096096,
+      "brier_score": 0.2507496250482913,
+      "calibration": [
+        {
+          "count": 132,
+          "observed_frequency": 0.6136363636363636,
+          "predicted_probability": 0.5359412046187713
+        },
+        {
+          "count": 129,
+          "observed_frequency": 0.5348837209302325,
+          "predicted_probability": 0.6390016821392763
+        }
+      ],
+      "expected_calibration_error": 0.09075470492830975,
+      "f1": 0.7254901960784313,
+      "mean_probability": 0.5868791417840783,
+      "observations": 261,
+      "positive_rate": 0.5747126436781609,
+      "precision": 0.5736434108527132,
+      "recall": 0.9866666666666667
+    },
+    "risk": {
+      "auc": 0.5064425770308123,
+      "brier_score": 0.1626565360835272,
+      "calibration": [
+        {
+          "count": 230,
+          "observed_frequency": 0.20434782608695654,
+          "predicted_probability": 0.1318883352807831
+        },
+        {
+          "count": 31,
+          "observed_frequency": 0.12903225806451613,
+          "predicted_probability": 0.26799575377149104
+        }
+      ],
+      "expected_calibration_error": 0.08035843391699661,
+      "f1": 0.0,
+      "mean_probability": 0.14805435050381738,
+      "observations": 261,
+      "positive_rate": 0.19540229885057472,
+      "precision": 0.0,
+      "recall": 0.0
+    }
+  },
+  "protected_test_consulted": false,
+  "transaction_cost_bps": 10.0,
+  "v2_multiagent": {
+    "annualized_return": 0.1349043183693308,
+    "annualized_volatility": 0.22244196478835443,
+    "cumulative_return": 0.8919517647943194,
+    "directional_accuracy": 0.5095785440613027,
+    "market_exposure": 0.9293893129770993,
+    "maximum_drawdown": -0.3505559170432453,
+    "position_changes": 29.0,
+    "sharpe_ratio": 0.6805329855209188,
+    "total_turnover": 15.0
+  },
+  "version": "2.0"
+}
