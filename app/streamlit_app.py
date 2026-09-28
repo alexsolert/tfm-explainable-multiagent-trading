@@ -17,6 +17,7 @@ from qqq_agents.dashboard.data import DashboardArtifacts, load_dashboard_artifac
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_ARTIFACTS = ROOT / "artifacts"
 DEMO_ARTIFACTS = ROOT / "demo_data"
+DASHBOARD_SCHEMA_VERSION = "v2-protected-1"
 
 COLORS = {
     "Multiagente V2": "#0f766e",
@@ -57,7 +58,8 @@ def resolve_data_root() -> tuple[Path, str]:
 
 
 @st.cache_data(show_spinner=False)
-def load_data(root: str) -> DashboardArtifacts:
+def load_data(root: str, schema_version: str) -> DashboardArtifacts:
+    del schema_version  # Its value deliberately invalidates stale Streamlit Cloud cache entries.
     return load_dashboard_artifacts(root)
 
 
@@ -145,6 +147,43 @@ def render_header(title: str, subtitle: str) -> None:
     st.markdown(f"<p class='page-subtitle'>{subtitle}</p>", unsafe_allow_html=True)
 
 
+def comparison_catalog() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "Categoría": "Modelo propio",
+                "Técnica": "Multiagente cuantitativo V1",
+                "Descripción": "Tres random forests, suma ponderada y veto binario de riesgo.",
+            },
+            {
+                "Categoría": "Modelo propio",
+                "Técnica": "Multiagente híbrido V1",
+                "Descripción": "V1 más contexto, sentimiento y validación mediante LLM.",
+            },
+            {
+                "Categoría": "Modelo propio",
+                "Técnica": "Multiagente calibrado V2",
+                "Descripción": "Selección temporal, calibración y exposición 0/50/100 %.",
+            },
+            {
+                "Categoría": "Benchmark conocido",
+                "Técnica": "Buy & Hold",
+                "Descripción": "Comprar QQQ al inicio y mantener el 100 % de exposición.",
+            },
+            {
+                "Categoría": "Benchmark conocido",
+                "Técnica": "SMA 50/200",
+                "Descripción": "Invertir cuando la media de 50 días supera a la de 200.",
+            },
+            {
+                "Categoría": "Benchmark conocido",
+                "Técnica": "Regresión logística",
+                "Descripción": "Clasificador lineal único sin deliberación multiagente.",
+            },
+        ]
+    )
+
+
 st.set_page_config(
     page_title="QQQ Multi-Agent Lab",
     page_icon="◈",
@@ -187,12 +226,19 @@ st.markdown(
 
 data_root, data_mode = resolve_data_root()
 try:
-    artifacts = load_data(str(data_root))
+    artifacts = load_data(str(data_root), DASHBOARD_SCHEMA_VERSION)
 except FileNotFoundError as error:
     st.error(str(error))
     st.stop()
 
 config = load_config(ROOT / "configs" / "base.yaml")
+v2_metrics_bundle = getattr(artifacts, "v2_metrics", None)
+v2_decisions_bundle = getattr(artifacts, "v2_decisions", None)
+v2_equity_bundle = getattr(artifacts, "v2_equity", None)
+v2_model_leaderboard = getattr(artifacts, "v2_model_leaderboard", None)
+v2_protected_metrics = getattr(artifacts, "v2_protected_metrics", None)
+v2_protected_decisions = getattr(artifacts, "v2_protected_decisions", None)
+v2_protected_equity = getattr(artifacts, "v2_protected_equity", None)
 final_metrics = artifacts.final_quantitative_metrics
 final_hybrid_metrics = artifacts.final_hybrid_metrics
 final_strategy = (
@@ -201,13 +247,13 @@ final_strategy = (
     else final_metrics["quantitative_multiagent"]
 )
 headline_strategy = (
-    artifacts.v2_protected_metrics["v2_multiagent"]
-    if artifacts.v2_protected_metrics is not None
+    v2_protected_metrics["v2_multiagent"]
+    if v2_protected_metrics is not None
     else final_strategy
 )
 headline_decisions = (
-    len(artifacts.v2_protected_decisions)
-    if artifacts.v2_protected_decisions is not None
+    len(v2_protected_decisions)
+    if v2_protected_decisions is not None
     else 105
 )
 
@@ -336,6 +382,12 @@ elif page == "Resultados":
         "Resultados experimentales",
         "Comparación fuera de muestra y validación previa con la configuración congelada.",
     )
+    with st.expander("Qué modelos y benchmarks estamos comparando", expanded=True):
+        st.dataframe(comparison_catalog(), width="stretch", hide_index=True)
+        st.caption(
+            "Las ablaciones de V2 no son técnicas externas: son variantes internas que eliminan "
+            "un componente para medir qué parte del sistema aporta o perjudica el resultado."
+        )
     final_tab, validation_tab = st.tabs(["Test final · 2023–2024", "Validación · 2020–2022"])
     with final_tab:
         result_columns = st.columns(5)
@@ -405,9 +457,9 @@ elif page == "Diagnóstico V2":
         "del test protegido.",
     )
     if (
-        artifacts.v2_metrics is None
-        or artifacts.v2_decisions is None
-        or artifacts.v2_equity is None
+        v2_metrics_bundle is None
+        or v2_decisions_bundle is None
+        or v2_equity_bundle is None
     ):
         st.info(
             "La arquitectura V2 está implementada, pero este paquete de demostración todavía no "
@@ -415,10 +467,10 @@ elif page == "Diagnóstico V2":
             "el periodo protegido 2025–2026."
         )
     else:
-        v2_metrics = artifacts.v2_metrics
+        v2_metrics = v2_metrics_bundle
         v2_strategy = v2_metrics["v2_multiagent"]
-        if artifacts.v2_protected_metrics is not None and artifacts.v2_protected_equity is not None:
-            protected = artifacts.v2_protected_metrics
+        if v2_protected_metrics is not None and v2_protected_equity is not None:
+            protected = v2_protected_metrics
             protected_strategy = protected["v2_multiagent"]
             st.success(
                 "Test protegido abierto después de congelar configuración y código: "
@@ -440,12 +492,12 @@ elif page == "Diagnóstico V2":
             protected_columns[4].metric(
                 "Exposición V2", percentage(protected_strategy["market_exposure"])
             )
-            protected_curves = artifacts.v2_protected_equity.loc[
+            protected_curves = v2_protected_equity.loc[
                 :,
                 [
                     name
                     for name in ("v2_multiagent", "buy_and_hold", "sma_50_200")
-                    if name in artifacts.v2_protected_equity
+                    if name in v2_protected_equity
                 ],
             ]
             st.plotly_chart(equity_figure(protected_curves), width="stretch")
@@ -480,45 +532,59 @@ elif page == "Diagnóstico V2":
         metric_columns[3].metric("Exposición", percentage(v2_strategy["market_exposure"]))
         metric_columns[4].metric("Operaciones reales", str(v2_metrics["operation_count"]))
 
-        curves = artifacts.v2_equity.loc[
+        curves = v2_equity_bundle.loc[
             :,
             [
                 name
                 for name in ("v2_multiagent", "buy_and_hold", "sma_50_200")
-                if name in artifacts.v2_equity
+                if name in v2_equity_bundle
             ],
         ]
         st.plotly_chart(equity_figure(curves), width="stretch")
 
-        st.markdown("### Qué componente aporta valor")
-        comparison = {"Multiagente V2": v2_strategy}
-        comparison.update(
+        st.markdown("### V2 frente a benchmarks conocidos")
+        benchmark_comparison = {"Multiagente V2 · propio": v2_strategy}
+        benchmark_comparison.update(
             {
                 EQUITY_NAMES.get(name, name): values
                 for name, values in v2_metrics["baselines"].items()
             }
         )
-        comparison.update(
-            {
-                f"Ablación · {name.replace('_', ' ')}": values
-                for name, values in v2_metrics["ablations"].items()
-            }
+        benchmark_table = pd.DataFrame(benchmark_comparison).T[
+            ["cumulative_return", "sharpe_ratio", "maximum_drawdown", "market_exposure"]
+        ]
+        benchmark_table.columns = ["Rentabilidad", "Sharpe", "Drawdown", "Exposición"]
+        table_format = {
+            "Rentabilidad": "{:.2%}",
+            "Sharpe": "{:.3f}",
+            "Drawdown": "{:.2%}",
+            "Exposición": "{:.2%}",
+        }
+        st.dataframe(benchmark_table.style.format(table_format), width="stretch")
+
+        st.markdown("### Ablaciones internas de V2")
+        st.caption(
+            "No son competidores externos: cada fila desactiva o modifica una parte de nuestro "
+            "sistema para identificar qué componente explica el resultado."
         )
-        ablation_table = pd.DataFrame(comparison).T[
+        ablations = {
+            f"{name.replace('_', ' ')}": values
+            for name, values in v2_metrics["ablations"].items()
+        }
+        ablation_table = pd.DataFrame(ablations).T[
             ["cumulative_return", "sharpe_ratio", "maximum_drawdown", "market_exposure"]
         ]
         ablation_table.columns = ["Rentabilidad", "Sharpe", "Drawdown", "Exposición"]
-        st.dataframe(
-            ablation_table.style.format(
-                {
-                    "Rentabilidad": "{:.2%}",
-                    "Sharpe": "{:.3f}",
-                    "Drawdown": "{:.2%}",
-                    "Exposición": "{:.2%}",
-                }
-            ),
-            width="stretch",
-        )
+        st.dataframe(ablation_table.style.format(table_format), width="stretch")
+
+        with st.expander("Cómo interpretar las ablaciones"):
+            st.markdown(
+                "- **structural long:** mantener QQQ sin señales tácticas.\n"
+                "- **risk only:** usar únicamente el agente de riesgo calibrado.\n"
+                "- **directional only:** usar únicamente los agentes direccionales.\n"
+                "- **binary calibrated risk:** riesgo calibrado, pero posición 0/100 %.\n"
+                "- **uncalibrated risk:** misma política usando probabilidades sin calibrar."
+            )
 
         risk_report = v2_metrics["probability_report"]["risk"]
         direction_report = v2_metrics["probability_report"]["direction"]
@@ -582,10 +648,8 @@ elif page == "Diagnóstico V2":
             width="stretch",
         )
 
-        if artifacts.v2_model_leaderboard is not None:
-            selected = artifacts.v2_model_leaderboard.loc[
-                artifacts.v2_model_leaderboard["selected"]
-            ].copy()
+        if v2_model_leaderboard is not None:
+            selected = v2_model_leaderboard.loc[v2_model_leaderboard["selected"]].copy()
             selected["cutoff"] = selected["cutoff"].dt.strftime("%Y-%m-%d")
             st.markdown("### Modelos seleccionados exclusivamente con datos pasados")
             st.dataframe(
