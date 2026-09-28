@@ -62,6 +62,7 @@ from qqq_agents.v4 import (
     return_family,
     run_v4_walk_forward,
 )
+from qqq_agents.v5 import build_v5_research_frame, load_v5_config, run_v5_walk_forward
 
 
 def _download(config_path: Path) -> None:
@@ -160,9 +161,23 @@ V2_FROZEN_PATHS = (
     Path("docs/experiments/v2-protocol.md"),
 )
 
+V5_FROZEN_PATHS = (
+    Path("configs/v5.yaml"),
+    Path("src/qqq_agents/v5/config.py"),
+    Path("src/qqq_agents/v5/features.py"),
+    Path("src/qqq_agents/v5/models.py"),
+    Path("src/qqq_agents/v5/policies.py"),
+    Path("src/qqq_agents/v5/evaluation.py"),
+    Path("docs/experiments/v5-multifrequency-protocol.md"),
+)
+
 
 def _v2_file_digests() -> dict[str, str]:
     return {str(path): _config_digest(path) for path in V2_FROZEN_PATHS}
+
+
+def _v5_file_digests() -> dict[str, str]:
+    return {str(path): _config_digest(path) for path in V5_FROZEN_PATHS}
 
 
 def _save_v2_result(
@@ -612,6 +627,319 @@ def _v4_development(config_path: Path, v4_config_path: Path) -> None:
     print(f"Saved V4 development artifacts to {output}")
 
 
+def _v5_prepare(v5_config_path: Path) -> None:
+    config = load_v5_config(v5_config_path)
+    markets = {
+        alias: load_market_data(config.data.raw_directory / f"{alias}.csv")
+        for alias in config.data.assets
+    }
+    cash_yield = load_yield_data(config.data.raw_directory / "cash_yield.csv")
+    frame = build_v5_research_frame(markets, cash_yield, risk_config=config.risk)
+    config.data.processed_path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(config.data.processed_path, index=True)
+    print(
+        json.dumps(
+            {
+                "rows": len(frame),
+                "start": str(frame.index.min().date()),
+                "end": str(frame.index.max().date()),
+                "destination": str(config.data.processed_path),
+                "risk_horizons": list(config.risk.horizons),
+            },
+            indent=2,
+        )
+    )
+
+
+def _v5_development(config_path: Path, v5_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v5_config(v5_config_path)
+    date_columns = [
+        *(f"target_end_date_{horizon}" for horizon in config.risk.horizons),
+        *(f"vol_target_end_date_{horizon}" for horizon in config.risk.horizons),
+    ]
+    frame = pd.read_csv(
+        config.data.processed_path,
+        index_col="date",
+        parse_dates=["date", *date_columns],
+    )
+    result = run_v5_walk_forward(frame, app_config=app_config, v5_config=config)
+    output = Path("artifacts/v5_development")
+    output.mkdir(parents=True, exist_ok=True)
+    result.decisions.to_csv(output / "decisions.csv", index=True)
+    result.training_audit.to_csv(output / "training_audit.csv", index=False)
+    result.model_leaderboard.to_csv(output / "model_leaderboard.csv", index=False)
+    result.policy_selection.leaderboard.to_csv(output / "policy_leaderboard.csv", index=False)
+    equity = pd.DataFrame(
+        {
+            f"policy_{name}": value.history["equity"]
+            for name, value in result.policies.items()
+        }
+    )
+    for name, value in result.baselines.items():
+        equity[name] = value.history["equity"]
+    equity.to_csv(output / "equity.csv", index=True)
+
+    def enriched_metrics(backtest, start: str, end: str) -> dict[str, float]:
+        history = backtest.history.loc[start:end]
+        metrics = calculate_metrics(
+            returns=history["strategy_return"],
+            turnover=history["turnover"],
+            asset_returns=history["asset_return"],
+            positions=history["applied_position"],
+            periods_per_year=252,
+        )
+        returns = history["strategy_return"].dropna()
+        threshold = returns.quantile(0.05)
+        metrics["expected_shortfall_5"] = float(returns.loc[returns <= threshold].mean())
+        metrics["calmar_ratio"] = (
+            metrics["annualized_return"] / abs(metrics["maximum_drawdown"])
+            if metrics["maximum_drawdown"]
+            else 0.0
+        )
+        return metrics
+
+    periods = {
+        "selection": (config.period.evaluation_start, config.period.selection_end),
+        "retrospective_assessment": (
+            config.period.retrospective_start,
+            config.period.development_end,
+        ),
+    }
+    subperiods = {}
+    for period_name, (start, end) in periods.items():
+        subperiods[period_name] = {
+            "period": {"start": start, "end": end},
+            "selected_policy": result.selected_policy,
+            "v5_selected": enriched_metrics(result.strategy, start, end),
+            "policies": {
+                name: enriched_metrics(value, start, end)
+                for name, value in result.policies.items()
+            },
+            "baselines": {
+                name: enriched_metrics(value, start, end)
+                for name, value in result.baselines.items()
+            },
+        }
+
+    retrospective_start = config.period.retrospective_start
+    retrospective_end = config.period.development_end
+    strategy_returns = result.strategy.history.loc[
+        retrospective_start:retrospective_end, "strategy_return"
+    ]
+    bootstrap = {
+        name: circular_block_bootstrap_difference(
+            strategy_returns,
+            value.history.loc[retrospective_start:retrospective_end, "strategy_return"],
+            samples=5_000,
+            block_length=20,
+            random_seed=config.models.random_seed,
+            periods_per_year=252,
+        )
+        for name, value in result.baselines.items()
+    }
+    candidate_family = {
+        **{f"policy_{name}": value for name, value in result.policies.items()},
+        **result.baselines,
+    }
+    candidate_returns = return_family(candidate_family).loc[
+        retrospective_start:retrospective_end
+    ]
+    robustness = {
+        "retrospective_block_bootstrap": bootstrap,
+        "deflated_sharpe": deflated_sharpe_probability(
+            strategy_returns,
+            trials=len(config.selection.policy_candidates),
+            periods_per_year=252,
+        ),
+        "candidate_family_cscv": probability_of_backtest_overfitting(
+            candidate_returns,
+            partitions=8,
+            periods_per_year=252,
+        ),
+        "cost_sensitivity": {},
+        "execution_delay": {},
+    }
+    selected_position = result.policy_details[result.selected_policy]["desired_position"]
+    aligned_close = frame.loc[selected_position.index, "close"]
+    aligned_cash = frame.loc[selected_position.index, "cash_return"]
+    for cost in (0, 5, 10, 20, 30):
+        sensitivity = run_backtest(
+            aligned_close,
+            selected_position,
+            transaction_cost_bps=cost,
+            periods_per_year=252,
+            cash_return=aligned_cash,
+        )
+        robustness["cost_sensitivity"][str(cost)] = enriched_metrics(
+            sensitivity, retrospective_start, retrospective_end
+        )
+    for delay in (1, 2):
+        delayed_position = selected_position.shift(delay - 1).fillna(0.0)
+        sensitivity = run_backtest(
+            aligned_close,
+            delayed_position,
+            transaction_cost_bps=app_config.experiment.transaction_cost_bps,
+            periods_per_year=252,
+            cash_return=aligned_cash,
+        )
+        robustness["execution_delay"][str(delay)] = enriched_metrics(
+            sensitivity, retrospective_start, retrospective_end
+        )
+    stress_periods = {
+        "2018_q4": ("2018-09-01", "2018-12-31"),
+        "covid_2020": ("2020-02-01", "2020-06-30"),
+        "bear_2022": ("2022-01-01", "2022-12-31"),
+    }
+    stress = {
+        name: {
+            "period": {"start": start, "end": end},
+            "v5_selected": enriched_metrics(result.strategy, start, end),
+            "buy_and_hold": enriched_metrics(result.baselines["buy_and_hold"], start, end),
+        }
+        for name, (start, end) in stress_periods.items()
+    }
+    payload = {
+        "version": config.version,
+        "period": {
+            "start": config.period.evaluation_start,
+            "end": config.period.development_end,
+        },
+        "prospective_start": config.period.prospective_start,
+        "prospective_period_consulted": False,
+        "retrospective_assessment_is_not_holdout": True,
+        "decision_frequency": {"risk": "daily", "trend": "weekly"},
+        "selected_policy": result.selected_policy,
+        "selection": {
+            "pareto_policies": list(result.policy_selection.pareto_policies),
+            "target_constraints_met": result.policy_selection.target_constraints_met,
+            "policy_candidates": list(config.selection.policy_candidates),
+        },
+        "v5_selected": result.strategy.metrics,
+        "policies": {name: value.metrics for name, value in result.policies.items()},
+        "baselines": {name: value.metrics for name, value in result.baselines.items()},
+        "subperiods": subperiods,
+        "stress_periods": stress,
+        "robustness": robustness,
+    }
+    (output / "metrics.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(f"Saved V5 development artifacts to {output}")
+
+
+def _freeze_v5(v5_config_path: Path) -> None:
+    metrics_path = Path("artifacts/v5_development/metrics.json")
+    if not metrics_path.exists():
+        raise SystemExit("Run 'qqq-agents v5-development' before freezing V5")
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    config = load_v5_config(v5_config_path)
+    payload = {
+        "config": str(v5_config_path),
+        "sha256": _config_digest(v5_config_path),
+        "frozen_files": _v5_file_digests(),
+        "selected_policy": metrics["selected_policy"],
+        "prospective_start": config.period.prospective_start,
+        "development_metrics_sha256": _config_digest(metrics_path),
+        "prospective_period_consulted": False,
+    }
+    destination = Path("configs/v5.lock.json")
+    destination.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def _verify_v5_lock(v5_config_path: Path) -> dict[str, object]:
+    lock_path = Path("configs/v5.lock.json")
+    if not lock_path.exists():
+        raise SystemExit("Freeze V5 with 'qqq-agents v5-freeze' before shadow evaluation")
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    if lock.get("sha256") != _config_digest(v5_config_path):
+        raise SystemExit("configs/v5.yaml changed after V5 freeze")
+    current_files = _v5_file_digests()
+    changed = [
+        path
+        for path, digest in lock.get("frozen_files", {}).items()
+        if current_files.get(path) != digest
+    ]
+    if changed:
+        raise SystemExit(f"V5 implementation changed after freeze: {changed}")
+    return lock
+
+
+def _v5_shadow(config_path: Path, v5_config_path: Path, through: str) -> None:
+    lock = _verify_v5_lock(v5_config_path)
+    config = load_v5_config(v5_config_path)
+    app_config = load_config(config_path)
+    requested_end = pd.Timestamp(through)
+    if requested_end < pd.Timestamp(config.period.prospective_start):
+        raise SystemExit(
+            f"V5 shadow mode begins on {config.period.prospective_start}; requested {through}"
+        )
+    download_end = (requested_end + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    raw_root = Path("data/raw/v5_shadow")
+    raw_root.mkdir(parents=True, exist_ok=True)
+    markets = {}
+    for alias, ticker in config.data.assets.items():
+        markets[alias] = download_market_data(
+            ticker=ticker,
+            start=config.data.start,
+            end=download_end,
+            destination=raw_root / f"{alias}.csv",
+            auto_adjust=True,
+        )
+    cash_yield = download_yield_data(
+        ticker=config.data.cash_yield_ticker,
+        start=config.data.start,
+        end=download_end,
+        destination=raw_root / "cash_yield.csv",
+    )
+    frame = build_v5_research_frame(markets, cash_yield, risk_config=config.risk)
+    result = run_v5_walk_forward(
+        frame,
+        app_config=app_config,
+        v5_config=config,
+        end=through,
+        allow_prospective=True,
+    )
+    if result.selected_policy != lock["selected_policy"]:
+        raise RuntimeError("Frozen V5 policy selection changed during shadow evaluation")
+    as_of = result.decisions.index[-1]
+    row = result.decisions.iloc[-1]
+    signal = {
+        "as_of": str(as_of.date()),
+        "generated_at_utc": pd.Timestamp.now(tz="UTC").isoformat(),
+        "mode": "shadow_only_no_execution",
+        "selected_policy": result.selected_policy,
+        "desired_qqq_exposure": float(row["selected_desired_position"]),
+        "policy_state": str(row["selected_policy_state"]),
+        "risk_score": float(row["risk_score"]),
+        "forecast_volatility": float(row["forecast_volatility"]),
+        "upper_volatility": float(row["upper_volatility"]),
+        "daily_trend_score": float(row["daily_trend_score"]),
+        "weekly_trend_score": float(row["weekly_trend_score"]),
+        "risk_probabilities": {
+            str(horizon): float(row[f"risk_probability_{horizon}"])
+            for horizon in config.risk.horizons
+        },
+        "model_versions": {
+            **{
+                f"risk_{horizon}": str(row[f"risk_model_{horizon}"])
+                for horizon in config.risk.horizons
+            },
+            "volatility_5": str(row["volatility_model_5"]),
+            "volatility_20": str(row["volatility_model_20"]),
+        },
+        "prospective_outcomes_used_for_tuning": False,
+    }
+    output = Path("artifacts/v5_shadow/signals")
+    output.mkdir(parents=True, exist_ok=True)
+    encoded = json.dumps(signal, indent=2, sort_keys=True)
+    (output / f"{as_of.date()}.json").write_text(encoded, encoding="utf-8")
+    (output / "latest.json").write_text(encoded, encoding="utf-8")
+    print(encoded)
+
+
 def _freeze_v2(v2_config_path: Path) -> None:
     digest = _config_digest(v2_config_path)
     destination = Path("configs/v2.lock.json")
@@ -1044,6 +1372,12 @@ def main() -> None:
         default=Path("configs/v4.yaml"),
         help="Path to the independent daily V4 research configuration.",
     )
+    parser.add_argument(
+        "--v5-config",
+        type=Path,
+        default=Path("configs/v5.yaml"),
+        help="Path to the independent multi-frequency V5 research configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
@@ -1090,6 +1424,27 @@ def main() -> None:
     subparsers.add_parser(
         "v4-development",
         help="Run daily V4 over selection and internal-validation periods.",
+    )
+    subparsers.add_parser(
+        "v5-prepare",
+        help="Build volatility-normalised multi-horizon targets for V5.",
+    )
+    subparsers.add_parser(
+        "v5-development",
+        help="Run V5 policy selection and retrospective robustness diagnostics.",
+    )
+    subparsers.add_parser(
+        "v5-freeze",
+        help="Freeze V5 code, policy and prospective start before shadow evaluation.",
+    )
+    v5_shadow_parser = subparsers.add_parser(
+        "v5-shadow",
+        help="Generate a non-executable prospective V5 signal from the frozen policy.",
+    )
+    v5_shadow_parser.add_argument(
+        "--through",
+        required=True,
+        help="Inclusive market-data date in YYYY-MM-DD format.",
     )
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
@@ -1225,6 +1580,14 @@ def main() -> None:
         _v4_prepare(args.config, args.v4_config)
     elif args.command == "v4-development":
         _v4_development(args.config, args.v4_config)
+    elif args.command == "v5-prepare":
+        _v5_prepare(args.v5_config)
+    elif args.command == "v5-development":
+        _v5_development(args.config, args.v5_config)
+    elif args.command == "v5-freeze":
+        _freeze_v5(args.v5_config)
+    elif args.command == "v5-shadow":
+        _v5_shadow(args.config, args.v5_config, args.through)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":

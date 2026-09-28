@@ -1,0 +1,17 @@
+{
+  "config": "configs/v5.yaml",
+  "development_metrics_sha256": "f52ec4936663f40da3f9d5919db7d7ae69f15a881269a126f5b08aca9ecaa4ab",
+  "frozen_files": {
+    "configs/v5.yaml": "2ca79c035795acbf740f80971fc2e94d11e4d7736062d588562829bff826b147",
+    "docs/experiments/v5-multifrequency-protocol.md": "5fc63226b0344640010010e9fe363170fb396a378fa19dccf1e75aaf951dd546",
+    "src/qqq_agents/v5/config.py": "74ec9dd8e7b7d1404d3e66bc048ddc610223ff5f96879a07bad3d5119f0718d4",
+    "src/qqq_agents/v5/evaluation.py": "6a4644e6ac8cb8d89696422ff90b6b258b24c77dc964a9cd1463105ac9fc3000",
+    "src/qqq_agents/v5/features.py": "83918886fc592275d2aadd8153378555fe58340a5d7e94e406222e06120e5cd0",
+    "src/qqq_agents/v5/models.py": "4c64e003ee8404e5ee0caef4d77ccb68abc5875a15f2f9f3a480ed3ffaa7a2af",
+    "src/qqq_agents/v5/policies.py": "1e30f68242c565a9010d3ea8609fff43be62c1bb35b16e7e10bff3158eccc55b"
+  },
+  "prospective_period_consulted": false,
+  "prospective_start": "2026-09-29",
+  "selected_policy": "trend_only",
+  "sha256": "2ca79c035795acbf740f80971fc2e94d11e4d7736062d588562829bff826b147"
+}

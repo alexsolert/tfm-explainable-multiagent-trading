@@ -1,0 +1,631 @@
+{
+  "baselines": {
+    "buy_and_hold": {
+      "annualized_return": 0.19831038432878367,
+      "annualized_volatility": 0.23836113097250508,
+      "cumulative_return": 3.772562781944269,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9995406522737712,
+      "maximum_drawdown": -0.3511872536056887,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.878605365159739,
+      "total_turnover": 1.0
+    },
+    "sma_50_200": {
+      "annualized_return": 0.18434386559124816,
+      "annualized_volatility": 0.20574839699794792,
+      "cumulative_return": 3.3128730910290454,
+      "directional_accuracy": 0.5551470588235294,
+      "market_exposure": 0.8180983004134129,
+      "maximum_drawdown": -0.28559353599511916,
+      "position_changes": 9.0,
+      "sharpe_ratio": 0.9256706287738401,
+      "total_turnover": 9.0
+    },
+    "trailing_volatility_target": {
+      "annualized_return": 0.18653811097728012,
+      "annualized_volatility": 0.2150784715586451,
+      "cumulative_return": 3.3823926286999324,
+      "directional_accuracy": 0.5583639705882353,
+      "market_exposure": 0.9691412023786937,
+      "maximum_drawdown": -0.34228318724565443,
+      "position_changes": 375.0,
+      "sharpe_ratio": 0.9031661020643481,
+      "total_turnover": 10.252886022182608
+    }
+  },
+  "decision_frequency": {
+    "risk": "daily",
+    "trend": "weekly"
+  },
+  "period": {
+    "end": "2026-08-31",
+    "start": "2018-01-01"
+  },
+  "policies": {
+    "asymmetric_state_machine": {
+      "annualized_return": 0.16151354689559327,
+      "annualized_volatility": 0.19042041343977179,
+      "cumulative_return": 2.645335666823785,
+      "directional_accuracy": 0.5510110294117647,
+      "market_exposure": 0.8452369099775279,
+      "maximum_drawdown": -0.3376997720172984,
+      "position_changes": 227.0,
+      "sharpe_ratio": 0.8819007894255472,
+      "total_turnover": 26.510060815750165
+    },
+    "confirmation": {
+      "annualized_return": 0.1963962050272834,
+      "annualized_volatility": 0.21618831301408997,
+      "cumulative_return": 3.707103021544423,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9730941343379661,
+      "maximum_drawdown": -0.34842750847501724,
+      "position_changes": 71.0,
+      "sharpe_ratio": 0.9378498661380488,
+      "total_turnover": 8.392979221287042
+    },
+    "minimum_caps": {
+      "annualized_return": 0.1838575954905184,
+      "annualized_volatility": 0.19532908632254029,
+      "cumulative_return": 3.297599423043015,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9078082657155871,
+      "maximum_drawdown": -0.3100996114155665,
+      "position_changes": 172.0,
+      "sharpe_ratio": 0.9621982103745337,
+      "total_turnover": 18.601520757572754
+    },
+    "risk_only": {
+      "annualized_return": 0.1923596041065998,
+      "annualized_volatility": 0.23228766647749852,
+      "cumulative_return": 3.571658475276977,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9719359505641837,
+      "maximum_drawdown": -0.35118725360568803,
+      "position_changes": 81.0,
+      "sharpe_ratio": 0.8740058254078817,
+      "total_turnover": 6.310292738328505
+    },
+    "trend_only": {
+      "annualized_return": 0.19498751147502258,
+      "annualized_volatility": 0.2109497070283938,
+      "cumulative_return": 3.6594379023279675,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9398713826366559,
+      "maximum_drawdown": -0.3100996114155664,
+      "position_changes": 73.0,
+      "sharpe_ratio": 0.9504383380294666,
+      "total_turnover": 11.799999999999997
+    }
+  },
+  "prospective_period_consulted": false,
+  "prospective_start": "2026-09-29",
+  "retrospective_assessment_is_not_holdout": true,
+  "robustness": {
+    "candidate_family_cscv": {
+      "combinations": 70,
+      "in_sample_winner_counts": {
+        "buy_and_hold": 8,
+        "policy_asymmetric_state_machine": 26,
+        "policy_confirmation": 0,
+        "policy_minimum_caps": 6,
+        "policy_risk_only": 15,
+        "policy_trend_only": 11,
+        "sma_50_200": 0,
+        "trailing_volatility_target": 4
+      },
+      "partitions": 8,
+      "probability_of_backtest_overfitting": 0.9285714285714286
+    },
+    "cost_sensitivity": {
+      "0": {
+        "annualized_return": 0.30545988630445686,
+        "annualized_volatility": 0.184730167298554,
+        "calmar_ratio": 1.7159267055182421,
+        "cumulative_return": 1.6406449254369098,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.17801453017901614,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.5358190335337318,
+        "total_turnover": 4.499999999999999
+      },
+      "10": {
+        "annualized_return": 0.3038506277432609,
+        "annualized_volatility": 0.18472731681105375,
+        "calmar_ratio": 1.7044890284707144,
+        "cumulative_return": 1.628806146663964,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.1782649360998697,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.529155610354428,
+        "total_turnover": 4.499999999999999
+      },
+      "20": {
+        "annualized_return": 0.3022430428932057,
+        "annualized_volatility": 0.18472572773243165,
+        "calmar_ratio": 1.6930928147235618,
+        "cumulative_return": 1.6170181748136105,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.17851534202072328,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.522481585115548,
+        "total_turnover": 4.499999999999999
+      },
+      "30": {
+        "annualized_return": 0.30063713030429184,
+        "annualized_volatility": 0.1847254000952411,
+        "calmar_ratio": 1.6817378819266038,
+        "cumulative_return": 1.6052808013567552,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.1787657479415764,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.5157970939983478,
+        "total_turnover": 4.499999999999999
+      },
+      "5": {
+        "annualized_return": 0.30465504771930063,
+        "annualized_volatility": 0.18472858438173803,
+        "calmar_ratio": 1.710202672644764,
+        "cumulative_return": 1.634719172120012,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.1781397331394431,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.5324886556871837,
+        "total_turnover": 4.499999999999999
+      }
+    },
+    "deflated_sharpe": {
+      "deflated_sharpe_probability": 0.9576559711889554,
+      "expected_maximum_null_sharpe": 0.6248439227486267,
+      "kurtosis": 6.501395128327053,
+      "observations": 918,
+      "observed_sharpe": 1.529155610354428,
+      "skewness": 0.12111572690715068,
+      "trials": 5
+    },
+    "execution_delay": {
+      "1": {
+        "annualized_return": 0.3038506277432609,
+        "annualized_volatility": 0.18472731681105375,
+        "calmar_ratio": 1.7044890284707144,
+        "cumulative_return": 1.628806146663964,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.1782649360998697,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.529155610354428,
+        "total_turnover": 4.499999999999999
+      },
+      "2": {
+        "annualized_return": 0.3047833676773404,
+        "annualized_volatility": 0.18470775173074894,
+        "calmar_ratio": 1.6580171705128903,
+        "cumulative_return": 1.6356633013134116,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.024944240854672037,
+        "market_exposure": 0.9558823529411763,
+        "maximum_drawdown": -0.18382401165547568,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.5331771082290038,
+        "total_turnover": 4.499999999999999
+      }
+    },
+    "retrospective_block_bootstrap": {
+      "buy_and_hold": {
+        "ci_95_lower": -0.059245186117234214,
+        "ci_95_upper": 0.017811780755812263,
+        "mean_difference": -0.017063179644780397,
+        "probability_strategy_outperforms": 0.1846
+      },
+      "sma_50_200": {
+        "ci_95_lower": -0.03372714482307477,
+        "ci_95_upper": 0.17800163744740907,
+        "mean_difference": 0.06113275010888515,
+        "probability_strategy_outperforms": 0.8798
+      },
+      "trailing_volatility_target": {
+        "ci_95_lower": -0.040318307575085185,
+        "ci_95_upper": 0.0294711497013035,
+        "mean_difference": -0.0041731595080691675,
+        "probability_strategy_outperforms": 0.4128
+      }
+    }
+  },
+  "selected_policy": "trend_only",
+  "selection": {
+    "pareto_policies": [
+      "risk_only",
+      "trend_only",
+      "minimum_caps",
+      "confirmation"
+    ],
+    "policy_candidates": [
+      "risk_only",
+      "trend_only",
+      "minimum_caps",
+      "confirmation",
+      "asymmetric_state_machine"
+    ],
+    "target_constraints_met": false
+  },
+  "stress_periods": {
+    "2018_q4": {
+      "buy_and_hold": {
+        "annualized_return": -0.43528106896873775,
+        "annualized_volatility": 0.29349956603450417,
+        "calmar_ratio": -1.917588618317445,
+        "cumulative_return": -0.16967706613452604,
+        "directional_accuracy": 0.47560975609756095,
+        "expected_shortfall_5": -0.03871932430477913,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.2269939781717455,
+        "position_changes": 0.0,
+        "sharpe_ratio": -1.7998231910210563,
+        "total_turnover": 0.0
+      },
+      "period": {
+        "end": "2018-12-31",
+        "start": "2018-09-01"
+      },
+      "v5_selected": {
+        "annualized_return": -0.36239384886704706,
+        "annualized_volatility": 0.2215000911007202,
+        "calmar_ratio": -2.0285862555869936,
+        "cumulative_return": -0.1362222689433371,
+        "directional_accuracy": 0.47560975609756095,
+        "expected_shortfall_5": -0.029719700993103552,
+        "market_exposure": 0.8060975609756098,
+        "maximum_drawdown": -0.1786435493531353,
+        "position_changes": 1.0,
+        "sharpe_ratio": -1.9203858640813558,
+        "total_turnover": 0.29999999999999993
+      }
+    },
+    "bear_2022": {
+      "buy_and_hold": {
+        "annualized_return": -0.32682794301871165,
+        "annualized_volatility": 0.3215024012610765,
+        "calmar_ratio": -0.9384060001416111,
+        "cumulative_return": -0.32576992692493245,
+        "directional_accuracy": 0.44223107569721115,
+        "expected_shortfall_5": -0.04267637703934421,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.3482798948103394,
+        "position_changes": 0.0,
+        "sharpe_ratio": -1.069790362781688,
+        "total_turnover": 0.0
+      },
+      "period": {
+        "end": "2022-12-31",
+        "start": "2022-01-01"
+      },
+      "v5_selected": {
+        "annualized_return": -0.2896137449384736,
+        "annualized_volatility": 0.2473385943974844,
+        "calmar_ratio": -0.9433422439728649,
+        "cumulative_return": -0.2886491460053565,
+        "directional_accuracy": 0.44223107569721115,
+        "expected_shortfall_5": -0.03227145049534613,
+        "market_exposure": 0.7884462151394421,
+        "maximum_drawdown": -0.30700813706674657,
+        "position_changes": 17.0,
+        "sharpe_ratio": -1.2583245771534013,
+        "total_turnover": 2.6999999999999993
+      }
+    },
+    "covid_2020": {
+      "buy_and_hold": {
+        "annualized_return": 0.3579942863162713,
+        "annualized_volatility": 0.484305937442901,
+        "calmar_ratio": 1.2535097654394718,
+        "cumulative_return": 0.13461042597567752,
+        "directional_accuracy": 0.6153846153846154,
+        "expected_shortfall_5": -0.07068691291603106,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.2855935359951193,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.8746319251498805,
+        "total_turnover": 0.0
+      },
+      "period": {
+        "end": "2020-06-30",
+        "start": "2020-02-01"
+      },
+      "v5_selected": {
+        "annualized_return": 0.2932237579586472,
+        "annualized_volatility": 0.425005604782605,
+        "calmar_ratio": 1.1424314869786685,
+        "cumulative_return": 0.1119558607369866,
+        "directional_accuracy": 0.6153846153846154,
+        "expected_shortfall_5": -0.0647467746109092,
+        "market_exposure": 0.9394230769230768,
+        "maximum_drawdown": -0.25666638332432645,
+        "position_changes": 4.0,
+        "sharpe_ratio": 0.8177395400567685,
+        "total_turnover": 0.5999999999999999
+      }
+    }
+  },
+  "subperiods": {
+    "retrospective_assessment": {
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.3196549669873827,
+          "annualized_volatility": 0.20197637328267637,
+          "calmar_ratio": 1.4039475207923857,
+          "cumulative_return": 1.7467555874092162,
+          "directional_accuracy": 0.5686274509803921,
+          "expected_shortfall_5": -0.027188763874022165,
+          "market_exposure": 1.0,
+          "maximum_drawdown": -0.22768298832635137,
+          "position_changes": 0.0,
+          "sharpe_ratio": 1.4744808743825042,
+          "total_turnover": 0.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.24294940552837407,
+          "annualized_volatility": 0.18948726716096734,
+          "calmar_ratio": 1.0670511983097342,
+          "cumulative_return": 1.2084136790853917,
+          "directional_accuracy": 0.5533769063180828,
+          "expected_shortfall_5": -0.02668959687340157,
+          "market_exposure": 0.8976034858387799,
+          "maximum_drawdown": -0.22768298832635103,
+          "position_changes": 3.0,
+          "sharpe_ratio": 1.242488569725718,
+          "total_turnover": 3.0
+        },
+        "trailing_volatility_target": {
+          "annualized_return": 0.30719952600733325,
+          "annualized_volatility": 0.19519662525311418,
+          "calmar_ratio": 1.3728745038680668,
+          "cumulative_return": 1.6534863312166417,
+          "directional_accuracy": 0.565359477124183,
+          "expected_shortfall_5": -0.026330751393468223,
+          "market_exposure": 0.9876435600142146,
+          "maximum_drawdown": -0.22376373451601017,
+          "position_changes": 45.0,
+          "sharpe_ratio": 1.4704150318243123,
+          "total_turnover": 1.6295683615268415
+        }
+      },
+      "period": {
+        "end": "2026-08-31",
+        "start": "2023-01-01"
+      },
+      "policies": {
+        "asymmetric_state_machine": {
+          "annualized_return": 0.2493633018593393,
+          "annualized_volatility": 0.14978115711344708,
+          "calmar_ratio": 1.7581693607266529,
+          "cumulative_return": 1.2502112186564647,
+          "directional_accuracy": 0.5435729847494554,
+          "expected_shortfall_5": -0.020667359006513474,
+          "market_exposure": 0.7773420479302832,
+          "maximum_drawdown": -0.14183121798703013,
+          "position_changes": 70.0,
+          "sharpe_ratio": 1.561815412556574,
+          "total_turnover": 9.25
+        },
+        "confirmation": {
+          "annualized_return": 0.3164256706126427,
+          "annualized_volatility": 0.19415804125796232,
+          "calmar_ratio": 1.5390486961393717,
+          "cumulative_return": 1.7223491198621788,
+          "directional_accuracy": 0.5686274509803921,
+          "expected_shortfall_5": -0.02605947950769974,
+          "market_exposure": 0.9866422319855604,
+          "maximum_drawdown": -0.20559821882594165,
+          "position_changes": 11.0,
+          "sharpe_ratio": 1.5134370206798573,
+          "total_turnover": 1.15
+        },
+        "minimum_caps": {
+          "annualized_return": 0.2881827063065596,
+          "annualized_volatility": 0.17499093833965804,
+          "calmar_ratio": 1.6563116836150051,
+          "cumulative_return": 1.5155455874324932,
+          "directional_accuracy": 0.5686274509803921,
+          "expected_shortfall_5": -0.023769948912454247,
+          "market_exposure": 0.9092770358408928,
+          "maximum_drawdown": -0.17399062577254942,
+          "position_changes": 83.0,
+          "sharpe_ratio": 1.5351912890556798,
+          "total_turnover": 7.649663727880588
+        },
+        "risk_only": {
+          "annualized_return": 0.3050895716742652,
+          "annualized_volatility": 0.19190441769919198,
+          "calmar_ratio": 1.394522148431855,
+          "cumulative_return": 1.6379172249026301,
+          "directional_accuracy": 0.5686274509803921,
+          "expected_shortfall_5": -0.026058695274556242,
+          "market_exposure": 0.9505875580752872,
+          "maximum_drawdown": -0.2187771431363349,
+          "position_changes": 59.0,
+          "sharpe_ratio": 1.4838273812067007,
+          "total_turnover": 4.023479234333265
+        },
+        "trend_only": {
+          "annualized_return": 0.3038506277432609,
+          "annualized_volatility": 0.18472731681105375,
+          "calmar_ratio": 1.7044890284707144,
+          "cumulative_return": 1.628806146663964,
+          "directional_accuracy": 0.5686274509803921,
+          "expected_shortfall_5": -0.02487124680998345,
+          "market_exposure": 0.9562091503267972,
+          "maximum_drawdown": -0.1782649360998697,
+          "position_changes": 31.0,
+          "sharpe_ratio": 1.529155610354428,
+          "total_turnover": 4.499999999999999
+        }
+      },
+      "selected_policy": "trend_only",
+      "v5_selected": {
+        "annualized_return": 0.3038506277432609,
+        "annualized_volatility": 0.18472731681105375,
+        "calmar_ratio": 1.7044890284707144,
+        "cumulative_return": 1.628806146663964,
+        "directional_accuracy": 0.5686274509803921,
+        "expected_shortfall_5": -0.02487124680998345,
+        "market_exposure": 0.9562091503267972,
+        "maximum_drawdown": -0.1782649360998697,
+        "position_changes": 31.0,
+        "sharpe_ratio": 1.529155610354428,
+        "total_turnover": 4.499999999999999
+      }
+    },
+    "selection": {
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.11692610467587894,
+          "annualized_volatility": 0.26172649760205796,
+          "calmar_ratio": 0.33294518373142035,
+          "cumulative_return": 0.7375272863086493,
+          "directional_accuracy": 0.5559968228752978,
+          "expected_shortfall_5": -0.03936508199078678,
+          "market_exposure": 0.9992057188244639,
+          "maximum_drawdown": -0.3511872536056887,
+          "position_changes": 1.0,
+          "sharpe_ratio": 0.55393506925428,
+          "total_turnover": 1.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.14336113964922492,
+          "annualized_volatility": 0.2168888448126117,
+          "calmar_ratio": 0.5019761359433393,
+          "cumulative_return": 0.9529280822129342,
+          "directional_accuracy": 0.556791104050834,
+          "expected_shortfall_5": -0.0351081918571895,
+          "market_exposure": 0.7601270849880858,
+          "maximum_drawdown": -0.28559353599511916,
+          "position_changes": 6.0,
+          "sharpe_ratio": 0.7269055256902476,
+          "total_turnover": 6.0
+        },
+        "trailing_volatility_target": {
+          "annualized_return": 0.10563938270893147,
+          "annualized_volatility": 0.22846962449500688,
+          "calmar_ratio": 0.3086315268915466,
+          "cumulative_return": 0.6515602802033567,
+          "directional_accuracy": 0.5536139793486894,
+          "expected_shortfall_5": -0.034624137149696935,
+          "market_exposure": 0.9556502061043424,
+          "maximum_drawdown": -0.34228318724565443,
+          "position_changes": 330.0,
+          "sharpe_ratio": 0.5541631462350185,
+          "total_turnover": 8.623317660655768
+        }
+      },
+      "period": {
+        "end": "2022-12-31",
+        "start": "2018-01-01"
+      },
+      "policies": {
+        "asymmetric_state_machine": {
+          "annualized_return": 0.10137732361353224,
+          "annualized_volatility": 0.21527857195816594,
+          "calmar_ratio": 0.30019956190062,
+          "cumulative_return": 0.6199971080938476,
+          "directional_accuracy": 0.556791104050834,
+          "expected_shortfall_5": -0.032755915722073176,
+          "market_exposure": 0.894742456728418,
+          "maximum_drawdown": -0.3376997720172984,
+          "position_changes": 157.0,
+          "sharpe_ratio": 0.5565301732858112,
+          "total_turnover": 17.260060815750165
+        },
+        "confirmation": {
+          "annualized_return": 0.11583442135897393,
+          "annualized_volatility": 0.23091684628213122,
+          "calmar_ratio": 0.3324491279863439,
+          "cumulative_return": 0.7290592845721133,
+          "directional_accuracy": 0.5559968228752978,
+          "expected_shortfall_5": -0.03432159880719509,
+          "market_exposure": 0.9632155373240727,
+          "maximum_drawdown": -0.34842750847501724,
+          "position_changes": 60.0,
+          "sharpe_ratio": 0.5903905969278546,
+          "total_turnover": 7.242979221287042
+        },
+        "minimum_caps": {
+          "annualized_return": 0.11315514273776017,
+          "annualized_volatility": 0.2089048455674865,
+          "calmar_ratio": 0.3648993374136165,
+          "cumulative_return": 0.7084164343963992,
+          "directional_accuracy": 0.5559968228752978,
+          "expected_shortfall_5": -0.03161213136463038,
+          "market_exposure": 0.9067373118037282,
+          "maximum_drawdown": -0.3100996114155665,
+          "position_changes": 89.0,
+          "sharpe_ratio": 0.6180010658033842,
+          "total_turnover": 10.951857029692167
+        },
+        "risk_only": {
+          "annualized_return": 0.1163502139368735,
+          "annualized_volatility": 0.2577864263258932,
+          "calmar_ratio": 0.33130534420680074,
+          "cumulative_return": 0.7330560762556675,
+          "directional_accuracy": 0.5559968228752978,
+          "expected_shortfall_5": -0.03874360124336234,
+          "market_exposure": 0.9875021334909567,
+          "maximum_drawdown": -0.35118725360568803,
+          "position_changes": 22.0,
+          "sharpe_ratio": 0.556374094632196,
+          "total_turnover": 2.2868135039952393
+        },
+        "trend_only": {
+          "annualized_return": 0.12138432467850313,
+          "annualized_volatility": 0.2281767577686823,
+          "calmar_ratio": 0.3914365584800274,
+          "cumulative_return": 0.7724539743034853,
+          "directional_accuracy": 0.5559968228752978,
+          "expected_shortfall_5": -0.03441508342382981,
+          "market_exposure": 0.927958697378872,
+          "maximum_drawdown": -0.3100996114155664,
+          "position_changes": 42.0,
+          "sharpe_ratio": 0.6167035367658329,
+          "total_turnover": 7.299999999999999
+        }
+      },
+      "selected_policy": "trend_only",
+      "v5_selected": {
+        "annualized_return": 0.12138432467850313,
+        "annualized_volatility": 0.2281767577686823,
+        "calmar_ratio": 0.3914365584800274,
+        "cumulative_return": 0.7724539743034853,
+        "directional_accuracy": 0.5559968228752978,
+        "expected_shortfall_5": -0.03441508342382981,
+        "market_exposure": 0.927958697378872,
+        "maximum_drawdown": -0.3100996114155664,
+        "position_changes": 42.0,
+        "sharpe_ratio": 0.6167035367658329,
+        "total_turnover": 7.299999999999999
+      }
+    }
+  },
+  "v5_selected": {
+    "annualized_return": 0.19498751147502258,
+    "annualized_volatility": 0.2109497070283938,
+    "cumulative_return": 3.6594379023279675,
+    "directional_accuracy": 0.5611213235294118,
+    "market_exposure": 0.9398713826366559,
+    "maximum_drawdown": -0.3100996114155664,
+    "position_changes": 73.0,
+    "sharpe_ratio": 0.9504383380294666,
+    "total_turnover": 11.799999999999997
+  },
+  "version": "5.0-multifrequency-research"
+}

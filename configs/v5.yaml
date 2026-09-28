@@ -1,0 +1,69 @@
+version: "5.0-multifrequency-research"
+
+period:
+  evaluation_start: "2018-01-01"
+  selection_end: "2022-12-31"
+  retrospective_start: "2023-01-01"
+  development_end: "2026-08-31"
+  prospective_start: "2026-09-29"
+  minimum_training_rows: 750
+
+risk:
+  horizons: [5, 10, 20]
+  volatility_multipliers: [1.25, 1.50, 1.75]
+  horizon_weights: [0.50, 0.30, 0.20]
+  activation_auc: 0.55
+
+models:
+  classifier_candidates:
+    - logistic
+    - histogram_gradient_boosting
+  volatility_candidates:
+    - har_ridge
+    - histogram_gradient_boosting
+    - trailing_realized
+    - vix
+  validation_splits: 3
+  purge_sessions: 20
+  random_seed: 42
+
+allocation:
+  target_volatility: 0.30
+  minimum_exposure: 0.25
+  alert_cap: 0.85
+  defensive_cap: 0.45
+  recovery_cap: 0.75
+  bearish_trend_cap: 0.70
+  risk_low: 1.00
+  risk_high: 1.75
+  risk_sensitivity: 0.35
+  recovery_confirmations: 5
+  maximum_daily_reentry: 0.10
+  minimum_rebalance: 0.05
+
+selection:
+  policy_candidates:
+    - risk_only
+    - trend_only
+    - minimum_caps
+    - confirmation
+    - asymmetric_state_machine
+  minimum_return_retention: 0.95
+  target_drawdown_reduction: 0.20
+
+data:
+  start: "2010-01-01"
+  raw_directory: data/raw/v4
+  processed_path: data/processed/v5_daily.csv
+  assets:
+    qqq: QQQ
+    spy: SPY
+    iwm: IWM
+    smh: SMH
+    tlt: TLT
+    vix: ^VIX
+    vix3m: ^VIX3M
+    hyg: HYG
+    lqd: LQD
+    qqqe: QQQE
+  cash_yield_ticker: ^IRX

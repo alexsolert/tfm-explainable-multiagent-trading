@@ -36,6 +36,16 @@ como periodo prospectivo. La revisión académica y el protocolo están en
 sus advertencias estadísticas se registran en
 [`docs/experiments/2026-09-28-v4-internal-validation.md`](docs/experiments/2026-09-28-v4-internal-validation.md).
 
+La V5 mantiene V4 congelada y separa frecuencias: riesgo y volatilidad diarios, tendencia
+semanal y cinco políticas de coordinación comparadas sobre una frontera de Pareto. Sustituye el
+evento fijo por targets normalizados a la volatilidad en horizontes de 5, 10 y 20 sesiones. El
+protocolo y la evaluación retrospectiva están documentados en
+[`docs/experiments/v5-multifrequency-protocol.md`](docs/experiments/v5-multifrequency-protocol.md)
+y
+[`docs/experiments/2026-09-28-v5-retrospective-assessment.md`](docs/experiments/2026-09-28-v5-retrospective-assessment.md).
+Las métricas, auditorías de modelos y frontera de políticas se versionan de forma compacta en
+[`research_results/v5`](research_results/v5), sin incluir el histórico de mercado.
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
@@ -130,6 +140,14 @@ uv run qqq-agents v3-development
 uv run qqq-agents v4-download
 uv run qqq-agents v4-prepare
 uv run qqq-agents v4-development
+
+# Construir, evaluar y congelar la investigación multi-frecuencia V5
+uv run qqq-agents v5-prepare
+uv run qqq-agents v5-development
+uv run qqq-agents v5-freeze
+
+# Generar una señal prospectiva sin ejecutar operaciones
+uv run qqq-agents v5-shadow --through 2026-09-29
 ```
 
 El comando `v2-protected-test` exige confirmación explícita y comprueba que el hash de
