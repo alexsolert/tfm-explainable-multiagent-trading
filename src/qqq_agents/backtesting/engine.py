@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from qqq_agents.backtesting.metrics import calculate_metrics
@@ -21,8 +22,14 @@ def run_backtest(
     *,
     transaction_cost_bps: float = 10.0,
     periods_per_year: int = 52,
+    cash_return: pd.Series | None = None,
 ) -> BacktestResult:
-    """Apply each decision to the following return, never to its own period."""
+    """Apply each decision to the following return, never to its own period.
+
+    ``cash_return`` represents the return earned during each observation by the
+    uninvested fraction.  Keeping it optional preserves the frozen V1/V2
+    experiments, whose cash assumption was zero.
+    """
 
     if transaction_cost_bps < 0:
         raise ValueError("transaction_cost_bps cannot be negative")
@@ -39,7 +46,19 @@ def run_backtest(
     applied_position = aligned_signal.shift(1).fillna(0.0)
     turnover = applied_position.diff().abs().fillna(applied_position.abs())
     costs = turnover * transaction_cost_bps / 10_000
-    strategy_return = applied_position * asset_return - costs
+    if cash_return is None:
+        aligned_cash_return = pd.Series(0.0, index=aligned_close.index)
+    else:
+        aligned_cash_return = cash_return.reindex(aligned_close.index).ffill().fillna(0.0)
+        if not np.isfinite(aligned_cash_return).all():
+            raise ValueError("cash_return must contain only finite values")
+        if (aligned_cash_return <= -1).any():
+            raise ValueError("cash_return cannot be less than or equal to -100%")
+    strategy_return = (
+        applied_position * asset_return
+        + (1 - applied_position) * aligned_cash_return
+        - costs
+    )
 
     history = pd.DataFrame(
         {
@@ -47,6 +66,8 @@ def run_backtest(
             "desired_position": aligned_signal,
             "applied_position": applied_position,
             "asset_return": asset_return,
+            "cash_return": aligned_cash_return,
+            "cash_contribution": (1 - applied_position) * aligned_cash_return,
             "turnover": turnover,
             "cost": costs,
             "strategy_return": strategy_return,

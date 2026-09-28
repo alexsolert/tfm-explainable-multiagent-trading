@@ -21,6 +21,12 @@ protocolo se encuentra en [`docs/experiments/v2-protocol.md`](docs/experiments/v
 El resultado de apertura única se documenta en
 [`docs/experiments/2026-09-28-v2-protected-test.md`](docs/experiments/2026-09-28-v2-protected-test.md).
 
+La V3 es una línea prospectiva independiente: añade entrenamiento cross-asset para el agente
+direccional, mantiene el riesgo especializado en QQQ, remunera el efectivo, permite exposición
+continua y compara también contra un benchmark con objetivo de volatilidad. El protocolo y los
+intentos descartados se documentan en
+[`docs/experiments/v3-protocol.md`](docs/experiments/v3-protocol.md).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
@@ -105,6 +111,11 @@ uv run qqq-agents v2-freeze
 # Solo después de congelar: descargar y evaluar el snapshot protegido
 uv run qqq-agents v2-open-protected-data --confirm-frozen-spec
 uv run qqq-agents v2-protected-test --confirm-frozen-spec
+
+# Construir y evaluar V3 sin abrir su periodo prospectivo
+uv run qqq-agents v3-download
+uv run qqq-agents v3-prepare
+uv run qqq-agents v3-development
 ```
 
 El comando `v2-protected-test` exige confirmación explícita y comprueba que el hash de
@@ -115,8 +126,8 @@ utilizado para diagnosticar V1 y, por tanto, forman parte del desarrollo de V2, 
 
 La aplicacion incluye un conjunto ligero de resultados congelados en `demo_data/`. Por ello, puede
 abrirse nada mas clonar el repositorio sin descargar QQQ, reentrenar modelos ni configurar una
-clave de API. La interfaz ofrece seis vistas: introduccion, arquitectura, resultados, explorador
-de decisiones, explicabilidad y metodologia.
+clave de API. La interfaz ofrece resultados V1/V2, un laboratorio V3, arquitectura, explorador
+de decisiones, explicabilidad y metodología.
 
 ```bash
 uv sync --extra dashboard

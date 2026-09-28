@@ -23,6 +23,16 @@ FILES = (
     "hybrid_final_test/metrics.json",
     "hybrid_final_test/decisions.csv",
     "hybrid_final_test/strategy.csv",
+    "v2_development/metrics.json",
+    "v2_development/decisions.csv",
+    "v2_development/equity.csv",
+    "v2_development/model_leaderboard.csv",
+    "v2_protected_test/metrics.json",
+    "v2_protected_test/decisions.csv",
+    "v2_protected_test/equity.csv",
+    "v3_development/metrics.json",
+    "v3_development/decisions.csv",
+    "v3_development/equity.csv",
 )
 
 

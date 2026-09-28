@@ -33,6 +33,9 @@ class DashboardArtifacts:
     v2_protected_metrics: dict[str, Any] | None
     v2_protected_decisions: pd.DataFrame | None
     v2_protected_equity: pd.DataFrame | None
+    v3_metrics: dict[str, Any] | None
+    v3_decisions: pd.DataFrame | None
+    v3_equity: pd.DataFrame | None
 
 
 def _optional_bundle(
@@ -131,6 +134,13 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
     v2_protected_metrics, v2_protected_decisions, v2_protected_equity = _optional_bundle(
         v2_protected_paths
     )
+    v3_root = artifact_root / "v3_development"
+    v3_paths = {
+        "metrics": v3_root / "metrics.json",
+        "decisions": v3_root / "decisions.csv",
+        "strategy": v3_root / "equity.csv",
+    }
+    v3_metrics, v3_decisions, v3_equity = _optional_bundle(v3_paths)
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
@@ -153,4 +163,7 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         v2_protected_metrics=v2_protected_metrics,
         v2_protected_decisions=v2_protected_decisions,
         v2_protected_equity=v2_protected_equity,
+        v3_metrics=v3_metrics,
+        v3_decisions=v3_decisions,
+        v3_equity=v3_equity,
     )

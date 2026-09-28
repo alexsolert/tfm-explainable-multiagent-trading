@@ -1,0 +1,168 @@
+{
+  "baselines": {
+    "buy_and_hold": {
+      "annualized_return": 0.20389424556874003,
+      "annualized_volatility": 0.2250761896271205,
+      "cumulative_return": 2.4743353413054487,
+      "directional_accuracy": 0.5689655172413793,
+      "market_exposure": 0.997134670487106,
+      "maximum_drawdown": -0.35055590541167114,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.9381226941960819,
+      "total_turnover": 1.0
+    },
+    "sma_50_200": {
+      "annualized_return": 0.1873174328169538,
+      "annualized_volatility": 0.1896917998768714,
+      "cumulative_return": 2.1656160856482587,
+      "directional_accuracy": 0.5747126436781609,
+      "market_exposure": 0.8080229226361032,
+      "maximum_drawdown": -0.2725026217578992,
+      "position_changes": 7.0,
+      "sharpe_ratio": 1.0015147667106847,
+      "total_turnover": 7.0
+    },
+    "volatility_target": {
+      "annualized_return": 0.14965284697902237,
+      "annualized_volatility": 0.17682948809614674,
+      "cumulative_return": 1.5497398108916145,
+      "directional_accuracy": 0.5632183908045977,
+      "market_exposure": 0.7608809727604877,
+      "maximum_drawdown": -0.2725026217578992,
+      "position_changes": 290.0,
+      "sharpe_ratio": 0.8783271634242319,
+      "total_turnover": 8.793633379403094
+    }
+  },
+  "cash_return_included": true,
+  "period": {
+    "end": "2026-08-31",
+    "start": "2020-01-01"
+  },
+  "prospective_period_consulted": false,
+  "subperiods": {
+    "internal_validation_2025_2026": {
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.2105938396495144,
+          "annualized_volatility": 0.20601344433135882,
+          "cumulative_return": 0.381843727792438,
+          "directional_accuracy": 0.5454545454545454,
+          "market_exposure": 1.0,
+          "maximum_drawdown": -0.2134158295572669,
+          "position_changes": 0.0,
+          "sharpe_ratio": 1.0311347697902549,
+          "total_turnover": 0.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.07447384651203715,
+          "annualized_volatility": 0.18788652169934467,
+          "cumulative_return": 0.1292574777683908,
+          "directional_accuracy": 0.5227272727272727,
+          "market_exposure": 0.8863636363636364,
+          "maximum_drawdown": -0.2134158295572669,
+          "position_changes": 2.0,
+          "sharpe_ratio": 0.47578489911620847,
+          "total_turnover": 2.0
+        },
+        "volatility_target": {
+          "annualized_return": 0.1291390435114652,
+          "annualized_volatility": 0.16777578256407005,
+          "cumulative_return": 0.22818806464999208,
+          "directional_accuracy": 0.5340909090909091,
+          "market_exposure": 0.7945519552994391,
+          "maximum_drawdown": -0.1947742337110251,
+          "position_changes": 76.0,
+          "sharpe_ratio": 0.8081402456229412,
+          "total_turnover": 2.3602669805050516
+        }
+      },
+      "period": {
+        "end": "2026-08-31",
+        "start": "2025-01-01"
+      },
+      "v3_multiagent": {
+        "annualized_return": 0.20345852028897138,
+        "annualized_volatility": 0.19555886293593785,
+        "cumulative_return": 0.368088566010649,
+        "directional_accuracy": 0.5454545454545454,
+        "market_exposure": 0.9492512674865499,
+        "maximum_drawdown": -0.20315084277062223,
+        "position_changes": 0.0,
+        "sharpe_ratio": 1.045307086179937,
+        "total_turnover": 0.0
+      }
+    },
+    "selection_2020_2024": {
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.20164374671202268,
+          "annualized_volatility": 0.23152517475895762,
+          "cumulative_return": 1.5142751466230284,
+          "directional_accuracy": 0.578544061302682,
+          "market_exposure": 0.9961685823754789,
+          "maximum_drawdown": -0.35055590541167114,
+          "position_changes": 1.0,
+          "sharpe_ratio": 0.9101299745688115,
+          "total_turnover": 1.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.22797638566565093,
+          "annualized_volatility": 0.1904242724425986,
+          "cumulative_return": 1.8032721925420119,
+          "directional_accuracy": 0.5938697318007663,
+          "market_exposure": 0.7816091954022989,
+          "maximum_drawdown": -0.2725026217578992,
+          "position_changes": 5.0,
+          "sharpe_ratio": 1.1757589729842315,
+          "total_turnover": 5.0
+        },
+        "volatility_target": {
+          "annualized_return": 0.15665305584922362,
+          "annualized_volatility": 0.18008200781953965,
+          "cumulative_return": 1.0760174148233852,
+          "directional_accuracy": 0.5747126436781609,
+          "market_exposure": 0.7495283043182358,
+          "maximum_drawdown": -0.2725026217578992,
+          "position_changes": 214.0,
+          "sharpe_ratio": 0.8993994284562674,
+          "total_turnover": 6.433366398898042
+        }
+      },
+      "period": {
+        "end": "2024-12-31",
+        "start": "2020-01-01"
+      },
+      "v3_multiagent": {
+        "annualized_return": 0.19199009987227855,
+        "annualized_volatility": 0.21887038714274099,
+        "cumulative_return": 1.414515643610951,
+        "directional_accuracy": 0.578544061302682,
+        "market_exposure": 0.9397894056849476,
+        "maximum_drawdown": -0.3347353731806826,
+        "position_changes": 8.0,
+        "sharpe_ratio": 0.912791193404905,
+        "total_turnover": 2.125503812396711
+      }
+    }
+  },
+  "training_assets": [
+    "iwm",
+    "qqq",
+    "smh",
+    "spy",
+    "tlt"
+  ],
+  "v3_multiagent": {
+    "annualized_return": 0.19487150507461903,
+    "annualized_volatility": 0.2129587384458994,
+    "cumulative_return": 2.3032712444779837,
+    "directional_accuracy": 0.5689655172413793,
+    "market_exposure": 0.9421752046492485,
+    "maximum_drawdown": -0.3347353731806826,
+    "position_changes": 8.0,
+    "sharpe_ratio": 0.9436191825140858,
+    "total_turnover": 2.125503812396711
+  },
+  "version": "3.0-research"
+}

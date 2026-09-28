@@ -17,10 +17,11 @@ from qqq_agents.dashboard.data import DashboardArtifacts, load_dashboard_artifac
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_ARTIFACTS = ROOT / "artifacts"
 DEMO_ARTIFACTS = ROOT / "demo_data"
-DASHBOARD_SCHEMA_VERSION = "v2-protected-1"
+DASHBOARD_SCHEMA_VERSION = "v3-research-1"
 
 COLORS = {
     "Multiagente V2": "#0f766e",
+    "Multiagente V3": "#0d9488",
     "Multiagente híbrido": "#14b8a6",
     "Multiagente cuantitativo": "#38bdf8",
     "Buy & hold": "#f59e0b",
@@ -29,6 +30,7 @@ COLORS = {
 }
 EQUITY_NAMES = {
     "v2_multiagent": "Multiagente V2",
+    "v3_multiagent": "Multiagente V3",
     "hybrid_multiagent": "Multiagente híbrido",
     "multiagent": "Multiagente cuantitativo",
     "buy_and_hold": "Buy & hold",
@@ -166,6 +168,13 @@ def comparison_catalog() -> pd.DataFrame:
                 "Descripción": "Selección temporal, calibración y exposición 0/50/100 %.",
             },
             {
+                "Categoría": "Modelo propio · investigación",
+                "Técnica": "Multiagente continuo V3",
+                "Descripción": (
+                    "Panel cross-asset en shadow mode y riesgo QQQ con efectivo remunerado."
+                ),
+            },
+            {
                 "Categoría": "Benchmark conocido",
                 "Técnica": "Buy & Hold",
                 "Descripción": "Comprar QQQ al inicio y mantener el 100 % de exposición.",
@@ -239,6 +248,9 @@ v2_model_leaderboard = getattr(artifacts, "v2_model_leaderboard", None)
 v2_protected_metrics = getattr(artifacts, "v2_protected_metrics", None)
 v2_protected_decisions = getattr(artifacts, "v2_protected_decisions", None)
 v2_protected_equity = getattr(artifacts, "v2_protected_equity", None)
+v3_metrics_bundle = getattr(artifacts, "v3_metrics", None)
+v3_decisions_bundle = getattr(artifacts, "v3_decisions", None)
+v3_equity_bundle = getattr(artifacts, "v3_equity", None)
 final_metrics = artifacts.final_quantitative_metrics
 final_hybrid_metrics = artifacts.final_hybrid_metrics
 final_strategy = (
@@ -266,6 +278,7 @@ page = st.sidebar.radio(
         "Arquitectura",
         "Resultados",
         "Diagnóstico V2",
+        "Investigación V3",
         "Decisiones",
         "Explicabilidad",
         "Metodología",
@@ -274,7 +287,7 @@ page = st.sidebar.radio(
 )
 st.sidebar.divider()
 st.sidebar.markdown(f"**Estado:** {data_mode}")
-st.sidebar.caption("V1 · 2023–2024 | V2 protegida · 2025–2026")
+st.sidebar.caption("V1 · 2023–2024 | V2 protegida · 2025–2026 | V3 prospectiva")
 st.sidebar.success("V2 evaluada sin reajuste posterior")
 
 if page == "Inicio":
@@ -657,6 +670,105 @@ elif page == "Diagnóstico V2":
                 width="stretch",
                 hide_index=True,
             )
+
+elif page == "Investigación V3":
+    render_header(
+        "V3 · Investigación prospectiva",
+        "Predicción cross-asset en observación, riesgo especializado y exposición continua "
+        "con efectivo remunerado.",
+    )
+    if v3_metrics_bundle is None or v3_equity_bundle is None or v3_decisions_bundle is None:
+        st.info(
+            "Los componentes V3 están implementados, pero este paquete todavía no contiene "
+            "su ejecución reproducible. Genérela con `qqq-agents v3-development`."
+        )
+    else:
+        validation = v3_metrics_bundle["subperiods"]["internal_validation_2025_2026"]
+        v3_validation = validation["v3_multiagent"]
+        buy_hold_validation = validation["baselines"]["buy_and_hold"]
+        st.warning(
+            "V3 no es un nuevo resultado final. Sus parámetros se seleccionaron con 2020–2024; "
+            "2025–agosto de 2026 actúa como validación interna y el periodo prospectivo comienza "
+            "en septiembre de 2026."
+        )
+        columns = st.columns(5)
+        columns[0].metric(
+            "Rentabilidad anual V3", percentage(v3_validation["annualized_return"])
+        )
+        columns[1].metric("Sharpe V3", f"{v3_validation['sharpe_ratio']:.3f}")
+        columns[2].metric(
+            "Sharpe Buy & Hold", f"{buy_hold_validation['sharpe_ratio']:.3f}"
+        )
+        columns[3].metric("Drawdown V3", percentage(v3_validation["maximum_drawdown"]))
+        columns[4].metric("Exposición", percentage(v3_validation["market_exposure"]))
+
+        validation_curves = v3_equity_bundle.loc[
+            "2025-01-01":"2026-08-31",
+            [
+                name
+                for name in ("v3_multiagent", "buy_and_hold", "sma_50_200", "volatility_target")
+                if name in v3_equity_bundle
+            ],
+        ]
+        rebased = validation_curves.div(validation_curves.iloc[0])
+        st.plotly_chart(equity_figure(rebased), width="stretch")
+
+        st.markdown("### Qué se conserva y qué se descarta")
+        findings = pd.DataFrame(
+            [
+                {
+                    "Componente": "Agente direccional cross-asset",
+                    "Estado": "Shadow mode",
+                    "Evidencia": (
+                        "Correlación con el retorno siguiente ≈ 0,04; sin poder de decisión."
+                    ),
+                },
+                {
+                    "Componente": "Pooling cross-asset para riesgo",
+                    "Estado": "Descartado",
+                    "Evidencia": (
+                        "Empeoró Sharpe y drawdown incluso incorporando identidad del activo."
+                    ),
+                },
+                {
+                    "Componente": "Riesgo especializado QQQ",
+                    "Estado": "Activo",
+                    "Evidencia": (
+                        "AUC temporal aproximada 0,60–0,66 en la mayor parte del desarrollo."
+                    ),
+                },
+                {
+                    "Componente": "Efectivo remunerado",
+                    "Estado": "Activo",
+                    "Evidencia": (
+                        "Rentabilidad histórica de letras del Tesoro aplicada al capital libre."
+                    ),
+                },
+            ]
+        )
+        st.dataframe(findings, hide_index=True, width="stretch")
+
+        st.markdown("### Lectura honesta del resultado")
+        st.info(
+            "En validación interna V3 mejora ligeramente el Sharpe y el drawdown de Buy & Hold, "
+            "pero todavía no alcanza la reducción de drawdown del 20–25 % definida como objetivo. "
+            "Por ello continúa como investigación y no sustituye a V2 ni al benchmark."
+        )
+        probability = v3_decisions_bundle["risk_probability"]
+        exposure = v3_decisions_bundle["desired_position"]
+        relationship = pd.DataFrame(
+            {"Probabilidad de riesgo": probability, "Exposición": exposure}
+        ).reset_index()
+        risk_figure = px.scatter(
+            relationship,
+            x="Probabilidad de riesgo",
+            y="Exposición",
+            color="date",
+            color_continuous_scale="Teal",
+            labels={"date": "Fecha"},
+        )
+        risk_figure.update_layout(height=390, margin=dict(l=10, r=10, t=20, b=10))
+        st.plotly_chart(risk_figure, width="stretch")
 
 elif page == "Decisiones":
     render_header(

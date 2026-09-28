@@ -13,12 +13,15 @@ import pandas as pd
 
 from qqq_agents.backtesting.baselines import buy_and_hold
 from qqq_agents.backtesting.engine import run_backtest
+from qqq_agents.backtesting.metrics import calculate_metrics
 from qqq_agents.config import load_config
 from qqq_agents.data import (
     build_context_features,
     download_context_bundle,
     download_market_data,
+    download_yield_data,
     load_market_data,
+    load_yield_data,
 )
 from qqq_agents.evaluation import run_quantitative_walk_forward
 from qqq_agents.explainability import generate_lime_cases
@@ -45,6 +48,12 @@ from qqq_agents.v2 import load_v2_config, run_v2_walk_forward
 from qqq_agents.v2.diagnostics import (
     circular_block_bootstrap_difference,
     probability_of_backtest_overfitting,
+)
+from qqq_agents.v3 import (
+    build_cross_asset_panel,
+    cash_returns_from_yield,
+    load_v3_config,
+    run_v3_walk_forward,
 )
 
 
@@ -293,6 +302,132 @@ def _v2_evaluate(
         end=end,
         protected_test_consulted=protected,
     )
+
+
+def _v3_download(v3_config_path: Path) -> None:
+    config = load_v3_config(v3_config_path)
+    config.data.raw_directory.mkdir(parents=True, exist_ok=True)
+    observations: dict[str, int] = {}
+    for alias, ticker in config.data.assets.items():
+        frame = download_market_data(
+            ticker=ticker,
+            start=config.data.start,
+            end=config.data.end,
+            destination=config.data.raw_directory / f"{alias}.csv",
+            auto_adjust=True,
+        )
+        observations[alias] = len(frame)
+    cash = download_yield_data(
+        ticker=config.data.cash_yield_ticker,
+        start=config.data.start,
+        end=config.data.end,
+        destination=config.data.raw_directory / "cash_yield.csv",
+    )
+    observations["cash_yield"] = len(cash)
+    print(json.dumps({"observations": observations}, indent=2, sort_keys=True))
+
+
+def _v3_prepare(config_path: Path, v3_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v3_config(v3_config_path)
+    markets = {
+        alias: load_market_data(config.data.raw_directory / f"{alias}.csv")
+        for alias in config.data.assets
+    }
+    panel = build_cross_asset_panel(
+        markets,
+        decision_frequency=app_config.experiment.decision_frequency,
+        risk_event_threshold=app_config.experiment.risk_event_threshold,
+    )
+    config.data.panel_path.parent.mkdir(parents=True, exist_ok=True)
+    panel.to_csv(config.data.panel_path, index=True)
+    qqq_dates = panel.xs("qqq", level="asset").index
+    cash_yield = load_yield_data(config.data.raw_directory / "cash_yield.csv")
+    cash = cash_returns_from_yield(cash_yield, qqq_dates)
+    cash.to_csv(config.data.cash_path, index_label="date")
+    print(
+        json.dumps(
+            {
+                "panel_rows": len(panel),
+                "panel_assets": panel.index.get_level_values("asset").nunique(),
+                "panel_destination": str(config.data.panel_path),
+                "cash_observations": len(cash),
+                "cash_destination": str(config.data.cash_path),
+            },
+            indent=2,
+        )
+    )
+
+
+def _v3_development(config_path: Path, v3_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v3_config(v3_config_path)
+    panel = pd.read_csv(
+        config.data.panel_path,
+        index_col=["date", "asset"],
+        parse_dates=["date", "target_end_date"],
+    )
+    cash = pd.read_csv(config.data.cash_path, index_col="date", parse_dates=["date"])[
+        "cash_return"
+    ]
+    result = run_v3_walk_forward(
+        panel,
+        cash,
+        app_config=app_config,
+        v3_config=config,
+    )
+    output = Path("artifacts/v3_development")
+    output.mkdir(parents=True, exist_ok=True)
+    result.decisions.to_csv(output / "decisions.csv", index=True)
+    result.strategy.history.to_csv(output / "strategy.csv", index=True)
+    result.training_audit.to_csv(output / "training_audit.csv", index=False)
+    result.model_leaderboard.to_csv(output / "model_leaderboard.csv", index=False)
+    equity = pd.DataFrame({"v3_multiagent": result.strategy.history["equity"]})
+    for name, baseline in result.baselines.items():
+        equity[name] = baseline.history["equity"]
+    equity.to_csv(output / "equity.csv", index=True)
+
+    def period_metrics(backtest, start: str, end: str) -> dict[str, float]:
+        history = backtest.history.loc[start:end]
+        return calculate_metrics(
+            returns=history["strategy_return"],
+            turnover=history["turnover"],
+            asset_returns=history["asset_return"],
+            positions=history["applied_position"],
+        )
+
+    periods = {
+        "selection_2020_2024": ("2020-01-01", "2024-12-31"),
+        "internal_validation_2025_2026": ("2025-01-01", config.research.development_end),
+    }
+    subperiods = {}
+    for period_name, (period_start, period_end) in periods.items():
+        subperiods[period_name] = {
+            "period": {"start": period_start, "end": period_end},
+            "v3_multiagent": period_metrics(result.strategy, period_start, period_end),
+            "baselines": {
+                name: period_metrics(value, period_start, period_end)
+                for name, value in result.baselines.items()
+            },
+        }
+    payload = {
+        "version": config.version,
+        "period": {
+            "start": config.research.development_start,
+            "end": config.research.development_end,
+        },
+        "prospective_period_consulted": False,
+        "v3_multiagent": result.strategy.metrics,
+        "baselines": {name: value.metrics for name, value in result.baselines.items()},
+        "subperiods": subperiods,
+        "cash_return_included": True,
+        "training_assets": sorted(panel.index.get_level_values("asset").unique()),
+    }
+    (output / "metrics.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(f"Saved V3 development artifacts to {output}")
 
 
 def _freeze_v2(v2_config_path: Path) -> None:
@@ -715,6 +850,12 @@ def main() -> None:
         default=Path("configs/v2.yaml"),
         help="Path to the independent V2 experimental configuration.",
     )
+    parser.add_argument(
+        "--v3-config",
+        type=Path,
+        default=Path("configs/v3.yaml"),
+        help="Path to the independent V3 research configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
@@ -744,6 +885,18 @@ def main() -> None:
         help="Open the frozen 2025-2026 V2 test after explicit confirmation.",
     )
     v2_test_parser.add_argument("--confirm-frozen-spec", action="store_true")
+    subparsers.add_parser(
+        "v3-download",
+        help="Download the cross-asset and T-bill snapshots used by V3.",
+    )
+    subparsers.add_parser(
+        "v3-prepare",
+        help="Build the point-in-time cross-asset panel and cash returns.",
+    )
+    subparsers.add_parser(
+        "v3-development",
+        help="Run V3 only over its declared development period.",
+    )
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
     )
@@ -866,6 +1019,12 @@ def main() -> None:
             raise SystemExit("Pass --confirm-frozen-spec to open the protected V2 test")
         _verify_v2_lock(args.v2_config)
         _v2_evaluate(args.config, args.v2_config, protected=True)
+    elif args.command == "v3-download":
+        _v3_download(args.v3_config)
+    elif args.command == "v3-prepare":
+        _v3_prepare(args.config, args.v3_config)
+    elif args.command == "v3-development":
+        _v3_development(args.config, args.v3_config)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":

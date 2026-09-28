@@ -71,3 +71,47 @@ def load_market_data(path: str | Path) -> pd.DataFrame:
 
     frame = pd.read_csv(path, index_col="date", parse_dates=["date"])
     return _normalize_yfinance_frame(frame, ticker="stored_snapshot")
+
+
+def download_yield_data(
+    *, ticker: str, start: str, end: str, destination: str | Path
+) -> pd.Series:
+    """Download a non-negative quoted yield without applying price validation."""
+
+    frame = yf.download(
+        ticker,
+        start=start,
+        end=end,
+        auto_adjust=False,
+        progress=False,
+        actions=False,
+        multi_level_index=False,
+    )
+    if frame.empty:
+        raise ValueError(f"No yield data returned for {ticker}")
+    if isinstance(frame.columns, pd.MultiIndex):
+        frame.columns = frame.columns.get_level_values(0)
+    columns = {str(column).strip().lower(): column for column in frame.columns}
+    if "close" not in columns:
+        raise ValueError(f"Yield data for {ticker} does not contain a close column")
+    result = pd.to_numeric(frame[columns["close"]], errors="coerce").dropna().astype(float)
+    result.index = pd.DatetimeIndex(result.index).tz_localize(None)
+    result = result.sort_index()
+    result.index.name = "date"
+    result.name = "annual_yield_percent"
+    if (result <= -100).any():
+        raise ValueError("Quoted annual yield cannot be less than or equal to -100%")
+    output_path = Path(destination)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    result.to_csv(output_path, index_label="date")
+    return result
+
+
+def load_yield_data(path: str | Path) -> pd.Series:
+    frame = pd.read_csv(path, index_col="date", parse_dates=["date"])
+    if "annual_yield_percent" not in frame:
+        raise ValueError("Stored yield snapshot lacks annual_yield_percent")
+    result = frame["annual_yield_percent"].astype(float).sort_index()
+    if (result <= -100).any():
+        raise ValueError("Stored annual yield contains an invalid observation")
+    return result

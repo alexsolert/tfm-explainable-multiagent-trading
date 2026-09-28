@@ -1,0 +1,48 @@
+version: "3.0-research"
+
+research:
+  development_start: "2020-01-01"
+  development_end: "2026-08-31"
+  prospective_start: "2026-09-01"
+  minimum_training_dates: 156
+
+models:
+  expected_return_candidates:
+    - ridge
+    - histogram_gradient_boosting
+  risk_candidates:
+    - logistic
+    - histogram_gradient_boosting
+  validation_splits: 3
+  embargo_decisions: 1
+  downside_quantile: 0.20
+  random_seed: 42
+
+allocation:
+  structural_exposure: 0.95
+  return_sensitivity: 0.25
+  downside_sensitivity: 0.25
+  downside_tolerance: 0.025
+  risk_sensitivity: 2.0
+  risk_tolerance: 0.25
+  minimum_rebalance: 0.10
+  maximum_step: 0.25
+
+data:
+  start: "2014-01-01"
+  end: "2026-09-01"
+  raw_directory: data/raw/v3
+  panel_path: data/processed/v3_panel.csv
+  cash_path: data/processed/v3_cash_returns.csv
+  assets:
+    qqq: QQQ
+    spy: SPY
+    iwm: IWM
+    smh: SMH
+    tlt: TLT
+    vix: ^VIX
+  cash_yield_ticker: ^IRX
+
+evaluation:
+  target_volatility: 0.15
+  volatility_window: 20
