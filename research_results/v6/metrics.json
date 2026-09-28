@@ -420,6 +420,110 @@
   },
   "selected_policy": "guarded_trend_115",
   "selection_constraints_met": true,
+  "selection_robustness_blocks": {
+    "early": {
+      "buy_and_hold": {
+        "annualized_return": 0.04377870394752992,
+        "annualized_volatility": 0.23485477061359325,
+        "cumulative_return": 0.2929351654529062,
+        "days_above_one": 0,
+        "directional_accuracy": 0.5347452018530774,
+        "expected_shortfall_5": -0.03417540966630194,
+        "financing_cost_total": 0.0,
+        "market_exposure": 0.99933818663137,
+        "maximum_drawdown": -0.5340403081996976,
+        "position_changes": 1.0,
+        "sharpe_ratio": 0.29962657169607676,
+        "total_turnover": 1.0
+      },
+      "period": {
+        "end": "2009-12-31",
+        "start": "2004-01-01"
+      },
+      "v6_selected": {
+        "annualized_return": 0.05569975880729894,
+        "annualized_volatility": 0.20799272507083663,
+        "cumulative_return": 0.3840415227502334,
+        "days_above_one": 1021,
+        "directional_accuracy": 0.5347452018530774,
+        "expected_shortfall_5": -0.03018892978920305,
+        "financing_cost_total": 0.025217002127597404,
+        "market_exposure": 1.0036068828590339,
+        "maximum_drawdown": -0.4550095248720267,
+        "position_changes": 37.0,
+        "sharpe_ratio": 0.364558957612246,
+        "total_turnover": 17.35
+      }
+    },
+    "late": {
+      "buy_and_hold": {
+        "annualized_return": 0.15304843025293002,
+        "annualized_volatility": 0.24275775907988026,
+        "cumulative_return": 1.3474396708796097,
+        "days_above_one": 0,
+        "directional_accuracy": 0.5662251655629139,
+        "expected_shortfall_5": -0.03715556318986196,
+        "financing_cost_total": 0.0,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.3511870979431685,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.7086331053502315,
+        "total_turnover": 0.0
+      },
+      "period": {
+        "end": "2022-12-31",
+        "start": "2017-01-01"
+      },
+      "v6_selected": {
+        "annualized_return": 0.17678479179832074,
+        "annualized_volatility": 0.22792776119332184,
+        "cumulative_return": 1.6522911439756225,
+        "days_above_one": 1209,
+        "directional_accuracy": 0.5662251655629139,
+        "expected_shortfall_5": -0.034859869599813624,
+        "financing_cost_total": 0.018419976953061447,
+        "market_exposure": 1.0602980132450333,
+        "maximum_drawdown": -0.3428389723199329,
+        "position_changes": 25.0,
+        "sharpe_ratio": 0.8288167552002694,
+        "total_turnover": 11.25
+      }
+    },
+    "middle": {
+      "buy_and_hold": {
+        "annualized_return": 0.1587974671579251,
+        "annualized_volatility": 0.1726456380012971,
+        "cumulative_return": 1.8024944718491986,
+        "days_above_one": 0,
+        "directional_accuracy": 0.5459704880817253,
+        "expected_shortfall_5": -0.025806462478353828,
+        "financing_cost_total": 0.0,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.1610440912828912,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.9403370708117917,
+        "total_turnover": 0.0
+      },
+      "period": {
+        "end": "2016-12-31",
+        "start": "2010-01-01"
+      },
+      "v6_selected": {
+        "annualized_return": 0.13276245607555293,
+        "annualized_volatility": 0.17184532141494924,
+        "cumulative_return": 1.390794520860871,
+        "days_above_one": 1426,
+        "directional_accuracy": 0.5459704880817253,
+        "expected_shortfall_5": -0.025805531905574122,
+        "financing_cost_total": 0.013401529838849017,
+        "market_exposure": 1.0641884222474463,
+        "maximum_drawdown": -0.17051707172980335,
+        "position_changes": 46.0,
+        "sharpe_ratio": 0.8116628147918042,
+        "total_turnover": 20.699999999999996
+      }
+    }
+  },
   "stress_periods": {
     "bear_2022": {
       "buy_and_hold": {
@@ -1063,5 +1167,5 @@
     "sharpe_ratio": 0.8048126675644272,
     "total_turnover": 56.05
   },
-  "version": "6.1-volatility-guard"
+  "version": "6.2-temporal-robust-selection"
 }

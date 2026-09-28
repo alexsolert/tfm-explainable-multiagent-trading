@@ -1,4 +1,4 @@
-version: "6.1-volatility-guard"
+version: "6.2-temporal-robust-selection"
 
 period:
   evaluation_start: "2004-01-01"
@@ -57,6 +57,16 @@ selection:
   minimum_return_improvement: 0.00
   maximum_drawdown_ratio: 1.00
   minimum_sharpe_improvement: 0.00
+  robustness_blocks:
+    - name: early
+      start: "2004-01-01"
+      end: "2009-12-31"
+    - name: middle
+      start: "2010-01-01"
+      end: "2016-12-31"
+    - name: late
+      start: "2017-01-01"
+      end: "2022-12-31"
 
 data:
   start: "1999-03-10"

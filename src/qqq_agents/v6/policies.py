@@ -153,6 +153,8 @@ def select_exposure_policy(
     *,
     benchmark: dict[str, float],
     config: SelectionConfig,
+    block_metrics: dict[str, dict[str, dict[str, float]]] | None = None,
+    benchmark_blocks: dict[str, dict[str, float]] | None = None,
 ) -> ExposureSelection:
     rows = []
     benchmark_drawdown = abs(benchmark["maximum_drawdown"])
@@ -173,6 +175,47 @@ def select_exposure_policy(
             }
         )
     frame = pd.DataFrame(rows).set_index("policy")
+    if block_metrics is not None and benchmark_blocks is not None:
+        for policy in frame.index:
+            comparisons = [
+                {
+                    "return_gap": values["annualized_return"]
+                    - benchmark_blocks[block]["annualized_return"],
+                    "sharpe_gap": values["sharpe_ratio"]
+                    - benchmark_blocks[block]["sharpe_ratio"],
+                    "drawdown_gap": values["maximum_drawdown"]
+                    - benchmark_blocks[block]["maximum_drawdown"],
+                }
+                for block, values in block_metrics[str(policy)].items()
+            ]
+            frame.loc[policy, "worst_block_return_gap"] = min(
+                value["return_gap"] for value in comparisons
+            )
+            frame.loc[policy, "worst_block_sharpe_gap"] = min(
+                value["sharpe_gap"] for value in comparisons
+            )
+            frame.loc[policy, "worst_block_drawdown_gap"] = min(
+                value["drawdown_gap"] for value in comparisons
+            )
+            frame.loc[policy, "block_return_win_rate"] = np.mean(
+                [value["return_gap"] >= 0 for value in comparisons]
+            )
+            frame.loc[policy, "block_sharpe_win_rate"] = np.mean(
+                [value["sharpe_gap"] >= 0 for value in comparisons]
+            )
+            frame.loc[policy, "block_drawdown_win_rate"] = np.mean(
+                [value["drawdown_gap"] >= 0 for value in comparisons]
+            )
+    else:
+        for column in (
+            "worst_block_return_gap",
+            "worst_block_sharpe_gap",
+            "worst_block_drawdown_gap",
+            "block_return_win_rate",
+            "block_sharpe_win_rate",
+            "block_drawdown_win_rate",
+        ):
+            frame[column] = 0.0
     constrained = frame.loc[
         (frame["return_improvement"] >= config.minimum_return_improvement)
         & (frame["sharpe_improvement"] >= config.minimum_sharpe_improvement)
@@ -185,6 +228,9 @@ def select_exposure_policy(
         + pool["sharpe_ratio"]
         + 0.5 * pool["maximum_drawdown"]
         - 0.001 * pool["total_turnover"]
+        + 0.50 * pool["worst_block_return_gap"]
+        + 0.25 * pool["worst_block_sharpe_gap"]
+        + 0.25 * pool["worst_block_drawdown_gap"]
     )
     selected = str(score.idxmax())
     frame["constraints_met"] = frame.index.isin(constrained.index)

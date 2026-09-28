@@ -862,6 +862,18 @@ def _v6_development(config_path: Path, v6_config_path: Path) -> None:
         "retrospective_assessment_is_not_holdout": True,
         "selected_policy": result.selected_policy,
         "selection_constraints_met": result.policy_selection.constraints_met,
+        "selection_robustness_blocks": {
+            block.name: {
+                "period": {"start": block.start, "end": block.end},
+                "v6_selected": enriched_metrics(
+                    result.strategy, block.start, block.end
+                ),
+                "buy_and_hold": enriched_metrics(
+                    result.baselines["buy_and_hold"], block.start, block.end
+                ),
+            }
+            for block in config.selection.robustness_blocks
+        },
         "v6_selected": result.strategy.metrics,
         "policies": {name: value.metrics for name, value in result.policies.items()},
         "baselines": {name: value.metrics for name, value in result.baselines.items()},

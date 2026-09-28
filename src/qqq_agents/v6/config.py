@@ -110,10 +110,35 @@ class AllocationConfig(StrictModel):
         return self
 
 
+class RobustnessBlock(StrictModel):
+    name: str
+    start: str
+    end: str
+
+    @model_validator(mode="after")
+    def chronological_block(self) -> RobustnessBlock:
+        if self.start > self.end:
+            raise ValueError("V6 robustness block start must precede its end")
+        return self
+
+
 class SelectionConfig(StrictModel):
     minimum_return_improvement: float
     maximum_drawdown_ratio: float = Field(gt=0, le=1.5)
     minimum_sharpe_improvement: float
+    robustness_blocks: tuple[RobustnessBlock, ...]
+
+    @model_validator(mode="after")
+    def non_overlapping_blocks(self) -> SelectionConfig:
+        if len(self.robustness_blocks) < 3:
+            raise ValueError("V6 robust selection requires at least three temporal blocks")
+        ordered = sorted(self.robustness_blocks, key=lambda block: block.start)
+        if any(
+            left.end >= right.start
+            for left, right in zip(ordered, ordered[1:], strict=False)
+        ):
+            raise ValueError("V6 robustness blocks cannot overlap")
+        return self
 
 
 class DataConfig(StrictModel):

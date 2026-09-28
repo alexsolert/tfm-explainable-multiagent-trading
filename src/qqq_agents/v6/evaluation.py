@@ -351,10 +351,35 @@ def run_v6_walk_forward(
         v6_config.period.evaluation_start,
         v6_config.period.selection_end,
     )
+    complete_selection_period = (
+        start_at <= pd.Timestamp(v6_config.period.evaluation_start)
+        and end_at >= pd.Timestamp(v6_config.period.selection_end)
+    )
+    available_blocks = (
+        v6_config.selection.robustness_blocks if complete_selection_period else ()
+    )
+    block_metrics = None
+    benchmark_blocks = None
+    if len(available_blocks) == len(v6_config.selection.robustness_blocks):
+        block_metrics = {
+            name: {
+                block.name: _period_metrics(value, block.start, block.end)
+                for block in available_blocks
+            }
+            for name, value in policies.items()
+        }
+        benchmark_blocks = {
+            block.name: _period_metrics(
+                baselines["buy_and_hold"], block.start, block.end
+            )
+            for block in available_blocks
+        }
     selection = select_exposure_policy(
         selection_metrics,
         benchmark=benchmark_metrics,
         config=v6_config.selection,
+        block_metrics=block_metrics,
+        benchmark_blocks=benchmark_blocks,
     )
     selected = selection.selected_policy
     decisions = decisions.join(policy_details[selected].add_prefix("selected_"))

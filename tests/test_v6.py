@@ -168,7 +168,16 @@ def test_versioned_v6_result_beats_buy_and_hold_but_preserves_uncertainty() -> N
     benchmark = retrospective["baselines"]["buy_and_hold"]
 
     assert metrics["selected_policy"] == "guarded_trend_115"
+    assert metrics["version"] == "6.2-temporal-robust-selection"
     assert metrics["retrospective_assessment_is_not_holdout"] is True
+    blocks = metrics["selection_robustness_blocks"]
+    assert set(blocks) == {"early", "middle", "late"}
+    assert blocks["early"]["v6_selected"]["sharpe_ratio"] > blocks["early"][
+        "buy_and_hold"
+    ]["sharpe_ratio"]
+    assert blocks["middle"]["v6_selected"]["sharpe_ratio"] < blocks["middle"][
+        "buy_and_hold"
+    ]["sharpe_ratio"]
     assert strategy["annualized_return"] > benchmark["annualized_return"]
     assert strategy["sharpe_ratio"] > benchmark["sharpe_ratio"]
     assert strategy["maximum_drawdown"] > benchmark["maximum_drawdown"]
