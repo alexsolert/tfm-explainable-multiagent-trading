@@ -33,6 +33,7 @@ def build_agent_signals(frame: pd.DataFrame, config: SignalConfig) -> pd.DataFra
             "relative_strength_20": relative_strength.resample("W-FRI").last(),
         }
     )
+    weekly["signal_as_of"] = weekly.index
     weekly["trend_vote"] = 2 * weekly["trend_score"] - 1
     weekly["volatility_risk"] = np.select(
         [

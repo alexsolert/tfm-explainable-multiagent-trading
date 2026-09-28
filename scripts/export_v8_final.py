@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -15,6 +16,7 @@ from qqq_agents.v2.diagnostics import (
 )
 from qqq_agents.v4.diagnostics import deflated_sharpe_probability
 from qqq_agents.v8 import evaluate_v8, load_v8_config
+from qqq_agents.v8.paper import default_account, generate_paper_decision
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "processed" / "v6_daily.csv"
@@ -161,6 +163,19 @@ def main() -> None:
         "execution": "paper_only",
         "disclaimer": "Experimental academic output; not investment advice.",
     }
+    balanced = next(profile for profile in config.profiles if profile.name == "balanced")
+    paper_demo, _ = generate_paper_decision(
+        frame.loc[: config.period.retrospective_end],
+        config=config,
+        profile=balanced,
+        state=default_account("demo", balanced.name, 10_000),
+        snapshot_sha256=hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+        config_sha256=hashlib.sha256(
+            (ROOT / "configs/v8.yaml").read_bytes()
+        ).hexdigest(),
+        implementation_sha256="versioned-v8-demo-bundle",
+        generated_at_utc="2026-09-01T00:00:00+00:00",
+    )
     payload = {
         "version": config.version,
         "selection_uses_only_data_through": config.period.selection_end,
@@ -224,6 +239,9 @@ def main() -> None:
         (destination / "current_decision.json").write_text(
             json.dumps(paper_decision, indent=2, default=_json_default), encoding="utf-8"
         )
+        (destination / "paper_demo.json").write_text(
+            json.dumps(paper_demo, indent=2, default=_json_default), encoding="utf-8"
+        )
 
     RESEARCH.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ARTIFACTS / "metrics.json", RESEARCH / "metrics.json")
@@ -231,6 +249,7 @@ def main() -> None:
     shutil.copy2(
         ARTIFACTS / "current_decision.json", RESEARCH / "current_decision.json"
     )
+    shutil.copy2(ARTIFACTS / "paper_demo.json", RESEARCH / "paper_demo.json")
     print(f"Exported V8 final bundle through {paper_decision['as_of'].date()}")
 
 

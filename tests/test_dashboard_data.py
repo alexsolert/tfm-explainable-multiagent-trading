@@ -100,3 +100,5 @@ def test_versioned_demo_bundle_is_self_contained() -> None:
         "aggressive",
     }
     assert "balanced" in artifacts.v8_equity
+    assert artifacts.v8_paper_decision["mode"] == "paper_only_no_execution"
+    assert artifacts.v8_paper_decision["safety"]["orders_submitted"] is False

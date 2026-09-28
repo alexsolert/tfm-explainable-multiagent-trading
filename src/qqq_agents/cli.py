@@ -65,6 +65,13 @@ from qqq_agents.v4 import (
 from qqq_agents.v5 import build_v5_research_frame, load_v5_config, run_v5_walk_forward
 from qqq_agents.v6 import build_v6_research_frame, load_v6_config, run_v6_walk_forward
 from qqq_agents.v6.backtest import run_exposure_backtest
+from qqq_agents.v8 import load_v8_config
+from qqq_agents.v8.paper import (
+    generate_paper_decision,
+    load_account,
+    persist_paper_run,
+    validate_paper_frame,
+)
 
 
 def _download(config_path: Path) -> None:
@@ -173,6 +180,13 @@ V5_FROZEN_PATHS = (
     Path("docs/experiments/v5-multifrequency-protocol.md"),
 )
 
+V8_IMPLEMENTATION_PATHS = (
+    Path("src/qqq_agents/v8/agents.py"),
+    Path("src/qqq_agents/v8/config.py"),
+    Path("src/qqq_agents/v8/coordinator.py"),
+    Path("src/qqq_agents/v8/paper.py"),
+)
+
 
 def _v2_file_digests() -> dict[str, str]:
     return {str(path): _config_digest(path) for path in V2_FROZEN_PATHS}
@@ -180,6 +194,14 @@ def _v2_file_digests() -> dict[str, str]:
 
 def _v5_file_digests() -> dict[str, str]:
     return {str(path): _config_digest(path) for path in V5_FROZEN_PATHS}
+
+
+def _combined_digest(paths: list[Path] | tuple[Path, ...]) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(paths, key=str):
+        digest.update(str(path).encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
 
 
 def _save_v2_result(
@@ -698,6 +720,125 @@ def _v6_prepare(v6_config_path: Path) -> None:
                 "start": str(frame.index.min().date()),
                 "end": str(frame.index.max().date()),
                 "destination": str(config.data.processed_path),
+            },
+            indent=2,
+        )
+    )
+
+
+def _v8_paper(
+    *,
+    v8_config_path: Path,
+    v6_config_path: Path,
+    through: str | None,
+    profile_name: str,
+    account: str,
+    initial_capital: float,
+    refresh: bool,
+    snapshot_dir: Path,
+    output_dir: Path,
+) -> None:
+    v8_config = load_v8_config(v8_config_path)
+    v6_config = load_v6_config(v6_config_path)
+    profile = next(
+        (value for value in v8_config.profiles if value.name == profile_name), None
+    )
+    if profile is None:
+        valid = ", ".join(value.name for value in v8_config.profiles)
+        raise ValueError(f"Unknown V8 profile {profile_name!r}; choose one of: {valid}")
+    requested = pd.Timestamp(through or pd.Timestamp.now(tz="UTC").date()).normalize()
+    if requested > pd.Timestamp.now(tz="UTC").tz_localize(None).normalize():
+        raise ValueError("Paper trading cannot request future market data")
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    raw_paths = [snapshot_dir / f"{alias}.csv" for alias in v6_config.data.assets]
+    yield_path = snapshot_dir / "cash_yield.csv"
+    if refresh:
+        end_exclusive = str((requested + pd.Timedelta(days=1)).date())
+        for alias, ticker in v6_config.data.assets.items():
+            download_market_data(
+                ticker=ticker,
+                start=v6_config.data.start,
+                end=end_exclusive,
+                destination=snapshot_dir / f"{alias}.csv",
+                auto_adjust=True,
+            )
+        download_yield_data(
+            ticker=v6_config.data.cash_yield_ticker,
+            start=v6_config.data.start,
+            end=end_exclusive,
+            destination=yield_path,
+        )
+    missing = [str(path) for path in [*raw_paths, yield_path] if not path.exists()]
+    if missing:
+        raise FileNotFoundError(
+            "Paper snapshots are missing. Re-run with --refresh. Missing: "
+            + ", ".join(missing)
+        )
+    markets = {
+        alias: load_market_data(snapshot_dir / f"{alias}.csv")
+        for alias in v6_config.data.assets
+    }
+    cash_yield = load_yield_data(yield_path)
+    frame = build_v6_research_frame(
+        markets,
+        cash_yield,
+        risk_config=v6_config.risk,
+        return_config=v6_config.return_model,
+    ).loc[:requested]
+    validation = validate_paper_frame(frame, requested_through=requested)
+    snapshot_sha256 = _combined_digest(tuple([*raw_paths, yield_path]))
+    config_sha256 = _config_digest(v8_config_path)
+    implementation_sha256 = _combined_digest(V8_IMPLEMENTATION_PATHS)
+    manifest = {
+        **validation,
+        "snapshot_sha256": snapshot_sha256,
+        "assets": v6_config.data.assets,
+        "cash_yield_ticker": v6_config.data.cash_yield_ticker,
+        "download_performed": refresh,
+    }
+    (snapshot_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    market_date = str(frame.index.max().date())
+    existing_path = output_dir / "runs" / f"{market_date}-{account}-{profile.name}.json"
+    if existing_path.exists():
+        existing = json.loads(existing_path.read_text(encoding="utf-8"))
+        expected = {
+            "snapshot_sha256": snapshot_sha256,
+            "config_sha256": config_sha256,
+            "implementation_sha256": implementation_sha256,
+        }
+        if any(existing.get(key) != value for key, value in expected.items()):
+            raise FileExistsError(
+                f"Immutable paper record already exists with different inputs: {existing_path}"
+            )
+        print(json.dumps({**existing, "idempotent_replay": True}, indent=2))
+        return
+    account_path = output_dir / "accounts" / f"{account}-{profile.name}.json"
+    state = load_account(
+        account_path,
+        account=account,
+        profile=profile.name,
+        initial_capital=initial_capital,
+    )
+    record, next_state = generate_paper_decision(
+        frame,
+        config=v8_config,
+        profile=profile,
+        state=state,
+        snapshot_sha256=snapshot_sha256,
+        config_sha256=config_sha256,
+        implementation_sha256=implementation_sha256,
+        generated_at_utc=pd.Timestamp.now(tz="UTC").isoformat(),
+    )
+    record["data_validation"] = validation
+    path, created = persist_paper_run(record, next_state, root=output_dir)
+    print(
+        json.dumps(
+            {
+                **record,
+                "record_path": str(path),
+                "created": created,
             },
             indent=2,
         )
@@ -1642,6 +1783,12 @@ def main() -> None:
         default=Path("configs/v6.yaml"),
         help="Path to the long-history risk-managed V6 configuration.",
     )
+    parser.add_argument(
+        "--v8-config",
+        type=Path,
+        default=Path("configs/v8.yaml"),
+        help="Path to the final profile-based V8 configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
@@ -1721,6 +1868,36 @@ def main() -> None:
     subparsers.add_parser(
         "v6-development",
         help="Run V6 expanding walk-forward selection and robustness diagnostics.",
+    )
+    v8_paper_parser = subparsers.add_parser(
+        "v8-paper",
+        help="Generate and persist a non-executing V8 paper-portfolio decision.",
+    )
+    v8_paper_parser.add_argument(
+        "--through",
+        help="Latest requested market date in YYYY-MM-DD; defaults to today.",
+    )
+    v8_paper_parser.add_argument(
+        "--profile",
+        choices=("conservative", "balanced", "aggressive"),
+        default="balanced",
+    )
+    v8_paper_parser.add_argument("--account", default="demo")
+    v8_paper_parser.add_argument("--initial-capital", type=float, default=10_000.0)
+    v8_paper_parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Download a new point-in-time snapshot before generating the decision.",
+    )
+    v8_paper_parser.add_argument(
+        "--snapshot-dir",
+        type=Path,
+        default=Path("data/raw/v8_paper"),
+    )
+    v8_paper_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("artifacts/v8_paper"),
     )
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
@@ -1870,6 +2047,18 @@ def main() -> None:
         _v6_prepare(args.v6_config)
     elif args.command == "v6-development":
         _v6_development(args.config, args.v6_config)
+    elif args.command == "v8-paper":
+        _v8_paper(
+            v8_config_path=args.v8_config,
+            v6_config_path=args.v6_config,
+            through=args.through,
+            profile_name=args.profile,
+            account=args.account,
+            initial_capital=args.initial_capital,
+            refresh=args.refresh,
+            snapshot_dir=args.snapshot_dir,
+            output_dir=args.output_dir,
+        )
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":

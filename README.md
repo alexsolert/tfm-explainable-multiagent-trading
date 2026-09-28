@@ -68,6 +68,10 @@ auditable preparada para paper trading. El protocolo se encuentra en
 [`docs/experiments/v8-final-framework-protocol.md`](docs/experiments/v8-final-framework-protocol.md)
 y el paquete compacto de resultados en [`research_results/v8`](research_results/v8).
 
+El motor no ejecutable de paper trading actualiza datos, valida su frescura, genera una decisión
+V8, valora una cuenta simulada y conserva un ledger inmutable e idempotente. Su operación se
+documenta en [`docs/operations/v8-paper-trading.md`](docs/operations/v8-paper-trading.md).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
@@ -186,6 +190,12 @@ de decisiones, explicabilidad y metodología.
 ```bash
 uv sync --extra dashboard
 uv run streamlit run app/streamlit_app.py
+```
+
+Para generar una decisión paper con datos actualizados:
+
+```bash
+uv run qqq-agents v8-paper --refresh --profile balanced
 ```
 
 Si existen artefactos locales completos, la aplicacion los utiliza de forma preferente. Para

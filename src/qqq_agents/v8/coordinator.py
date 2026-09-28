@@ -21,7 +21,8 @@ def coordinate_profile(
     signals: pd.DataFrame, profile: ProfileConfig
 ) -> pd.DataFrame:
     records: list[dict[str, object]] = []
-    for timestamp, row in signals.iterrows():
+    operational = signals.drop(columns=["signal_as_of"], errors="ignore")
+    for timestamp, row in operational.iterrows():
         trend = float(row["trend_score"])
         volatility = max(float(row["forecast_volatility"]), 1e-6)
         severe_volatility = float(row["volatility_risk"]) >= 1.0

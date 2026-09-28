@@ -1,0 +1,67 @@
+{
+  "record_schema": "v8-paper-1",
+  "framework_version": "8.0-defensible-framework",
+  "mode": "paper_only_no_execution",
+  "generated_at_utc": "2026-09-01T00:00:00+00:00",
+  "market_as_of": "2026-08-31",
+  "signal_as_of": "2026-08-28",
+  "snapshot_sha256": "a47e883a1a27d69fb257caaec3757745fb085f3424591a2c58548c0a82b555ab",
+  "config_sha256": "b373fe7daa1aa128c86db7d38089f5c860dc25d904abc5bb883cc63bf9a3f0f9",
+  "implementation_sha256": "versioned-v8-demo-bundle",
+  "account": "demo",
+  "currency": "USD",
+  "profile": {
+    "name": "balanced",
+    "label": "Equilibrado"
+  },
+  "agents": {
+    "trend": {
+      "score": 0.8,
+      "vote": 0.6000000000000001
+    },
+    "volatility": {
+      "annualized": 0.1836681625553882,
+      "risk_level": 0.0,
+      "authority": "hard_veto_only_when_extreme"
+    },
+    "drawdown": {
+      "value_252": -0.0387887386729008,
+      "risk_level": 0.0,
+      "authority": "advisory"
+    },
+    "relative_strength": {
+      "qqq_vs_spy_20": 0.0114595855262793,
+      "vote": 1.0,
+      "authority": "advisory"
+    }
+  },
+  "committee_score": 0.52,
+  "decision": {
+    "action": "INCREASE",
+    "previous_exposure": 0.0,
+    "target_exposure": 1.5,
+    "policy_state": "VOLATILITY_MANAGED",
+    "signal_strength": 0.8,
+    "explanation": "Estado VOLATILITY_MANAGED; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 150%."
+  },
+  "paper_portfolio": {
+    "price": 716.013916015625,
+    "equity_before_trade": 10000.0,
+    "transaction_cost": 15.0,
+    "equity_after_trade": 9985.0,
+    "current_equivalent_qqq_shares": 0.0,
+    "target_equivalent_qqq_shares": 20.917889533969838,
+    "equivalent_trade_shares": 20.917889533969838,
+    "asset_return_since_previous": 0.0,
+    "paper_return_since_previous": 0.0,
+    "financing_cost": 0.0,
+    "cash_contribution": 0.0
+  },
+  "safety": {
+    "broker_connected": false,
+    "orders_submitted": false,
+    "leverage_is_synthetic": true,
+    "disclaimer": "Academic paper simulation; not investment advice."
+  },
+  "record_sha256": "58ba1c4c9d4ebc58f7f765f7f0f6a2f3630661b43f3c88c5d8d7b8b26530e25d"
+}

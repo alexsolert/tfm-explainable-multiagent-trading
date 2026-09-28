@@ -43,6 +43,8 @@ class DashboardArtifacts:
     v8_decisions: pd.DataFrame | None
     v8_equity: pd.DataFrame | None
     v8_current_decision: dict[str, Any] | None
+    v8_paper_decision: dict[str, Any] | None
+    v8_paper_ledger: pd.DataFrame | None
 
 
 def _optional_bundle(
@@ -168,6 +170,22 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         if v8_current_path.exists()
         else None
     )
+    live_paper_path = artifact_root / "v8_paper" / "latest.json"
+    demo_paper_path = v8_root / "paper_demo.json"
+    selected_paper_path = (
+        live_paper_path if live_paper_path.exists() else demo_paper_path
+    )
+    v8_paper_decision = (
+        json.loads(selected_paper_path.read_text(encoding="utf-8"))
+        if selected_paper_path.exists()
+        else None
+    )
+    paper_ledger_path = artifact_root / "v8_paper" / "ledger.csv"
+    v8_paper_ledger = (
+        pd.read_csv(paper_ledger_path, parse_dates=["market_as_of", "signal_as_of"])
+        if paper_ledger_path.exists()
+        else None
+    )
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
@@ -200,4 +218,6 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         v8_decisions=v8_decisions,
         v8_equity=v8_equity,
         v8_current_decision=v8_current_decision,
+        v8_paper_decision=v8_paper_decision,
+        v8_paper_ledger=v8_paper_ledger,
     )

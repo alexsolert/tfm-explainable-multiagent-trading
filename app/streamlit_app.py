@@ -269,6 +269,8 @@ v8_metrics_bundle = getattr(artifacts, "v8_metrics", None)
 v8_decisions_bundle = getattr(artifacts, "v8_decisions", None)
 v8_equity_bundle = getattr(artifacts, "v8_equity", None)
 v8_current_decision = getattr(artifacts, "v8_current_decision", None)
+v8_paper_decision = getattr(artifacts, "v8_paper_decision", None)
+v8_paper_ledger = getattr(artifacts, "v8_paper_ledger", None)
 final_metrics = artifacts.final_quantitative_metrics
 final_hybrid_metrics = artifacts.final_hybrid_metrics
 final_strategy = (
@@ -448,11 +450,37 @@ elif page == "V8 final":
         default="Equilibrado",
     )
     selected_profile = profile_labels[selected_label]
-    current = v8_current_decision["profiles"][selected_profile]
+    paper_is_current = (
+        v8_paper_decision is not None
+        and v8_paper_decision["profile"]["name"] == selected_profile
+    )
+    if paper_is_current:
+        paper_decision = v8_paper_decision["decision"]
+        current = {
+            "exposure": paper_decision["target_exposure"],
+            "action": paper_decision["action"],
+            "state": paper_decision["policy_state"],
+            "signal_strength": paper_decision["signal_strength"],
+            "explanation": paper_decision["explanation"],
+        }
+        current_as_of = v8_paper_decision["market_as_of"]
+        raw_agents = v8_paper_decision["agents"]
+        agents = {
+            "trend": raw_agents["trend"],
+            "volatility": {
+                "annualized_forecast": raw_agents["volatility"]["annualized"],
+            },
+            "drawdown": {"current_252": raw_agents["drawdown"]["value_252"]},
+            "relative_strength": raw_agents["relative_strength"],
+        }
+    else:
+        current = v8_current_decision["profiles"][selected_profile]
+        current_as_of = v8_current_decision["as_of"]
+        agents = v8_current_decision["agents"]
     current_columns = st.columns(5)
     current_columns[0].metric(
         "Fecha de la señal",
-        pd.Timestamp(v8_current_decision["as_of"]).strftime("%d/%m/%Y"),
+        pd.Timestamp(current_as_of).strftime("%d/%m/%Y"),
     )
     current_columns[1].metric("Exposición propuesta", percentage(current["exposure"]))
     current_columns[2].metric(
@@ -471,7 +499,33 @@ elif page == "V8 final":
         "asesoramiento financiero."
     )
 
-    agents = v8_current_decision["agents"]
+    if paper_is_current:
+        st.markdown("### Simulación de cartera paper")
+        paper = v8_paper_decision["paper_portfolio"]
+        paper_columns = st.columns(5)
+        paper_columns[0].metric("Capital antes", f"${paper['equity_before_trade']:,.2f}")
+        paper_columns[1].metric("Coste simulado", f"${paper['transaction_cost']:,.2f}")
+        paper_columns[2].metric("Capital después", f"${paper['equity_after_trade']:,.2f}")
+        paper_columns[3].metric(
+            "QQQ equivalente", f"{paper['target_equivalent_qqq_shares']:.2f}"
+        )
+        paper_columns[4].metric(
+            "Cambio equivalente", f"{paper['equivalent_trade_shares']:+.2f}"
+        )
+        if v8_paper_decision["safety"]["leverage_is_synthetic"]:
+            st.warning(
+                "La exposición superior al 100 % es sintética. Las participaciones mostradas "
+                "son una equivalencia contable, no una orden preparada para enviarse."
+            )
+        if v8_paper_ledger is not None:
+            with st.expander("Historial prospectivo de la cuenta paper"):
+                st.dataframe(v8_paper_ledger.tail(20), hide_index=True, width="stretch")
+    else:
+        st.caption(
+            "La demostración de cartera paper incluida corresponde al perfil equilibrado. "
+            "Cada perfil mantiene una cuenta separada cuando se ejecuta localmente."
+        )
+
     st.markdown("### Deliberación del comité")
     agent_columns = st.columns(4)
     with agent_columns[0].container(border=True):
