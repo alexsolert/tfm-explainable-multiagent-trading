@@ -90,6 +90,7 @@ def test_cash_conversion_is_non_negative_and_weekly() -> None:
 
     assert returns.iloc[0] == 0.0
     assert (returns.iloc[1:] > 0).all()
+    assert returns.iloc[1] == pytest.approx((1.05 ** (7 / 365)) - 1)
     assert returns.index.equals(dates)
 
 

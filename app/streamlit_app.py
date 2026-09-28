@@ -17,25 +17,29 @@ from qqq_agents.dashboard.data import DashboardArtifacts, load_dashboard_artifac
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_ARTIFACTS = ROOT / "artifacts"
 DEMO_ARTIFACTS = ROOT / "demo_data"
-DASHBOARD_SCHEMA_VERSION = "v3-research-1"
+DASHBOARD_SCHEMA_VERSION = "v4-daily-1"
 
 COLORS = {
     "Multiagente V2": "#0f766e",
     "Multiagente V3": "#0d9488",
+    "Multiagente V4 diario": "#0369a1",
     "Multiagente híbrido": "#14b8a6",
     "Multiagente cuantitativo": "#38bdf8",
     "Buy & hold": "#f59e0b",
     "Medias 50/200": "#a78bfa",
     "Agente logístico único": "#fb7185",
+    "Objetivo de volatilidad": "#64748b",
 }
 EQUITY_NAMES = {
     "v2_multiagent": "Multiagente V2",
     "v3_multiagent": "Multiagente V3",
+    "v4_multiagent": "Multiagente V4 diario",
     "hybrid_multiagent": "Multiagente híbrido",
     "multiagent": "Multiagente cuantitativo",
     "buy_and_hold": "Buy & hold",
     "sma_50_200": "Medias 50/200",
     "single_logistic_agent": "Agente logístico único",
+    "trailing_volatility_target": "Objetivo de volatilidad",
 }
 ROLE_NAMES = {
     "market_context": "Contexto de mercado",
@@ -175,6 +179,13 @@ def comparison_catalog() -> pd.DataFrame:
                 ),
             },
             {
+                "Categoría": "Modelo propio · investigación",
+                "Técnica": "Multiagente diario V4",
+                "Descripción": (
+                    "Riesgo calibrado, volatilidad HAR, tendencia y dirección con abstención."
+                ),
+            },
+            {
                 "Categoría": "Benchmark conocido",
                 "Técnica": "Buy & Hold",
                 "Descripción": "Comprar QQQ al inicio y mantener el 100 % de exposición.",
@@ -251,6 +262,9 @@ v2_protected_equity = getattr(artifacts, "v2_protected_equity", None)
 v3_metrics_bundle = getattr(artifacts, "v3_metrics", None)
 v3_decisions_bundle = getattr(artifacts, "v3_decisions", None)
 v3_equity_bundle = getattr(artifacts, "v3_equity", None)
+v4_metrics_bundle = getattr(artifacts, "v4_metrics", None)
+v4_decisions_bundle = getattr(artifacts, "v4_decisions", None)
+v4_equity_bundle = getattr(artifacts, "v4_equity", None)
 final_metrics = artifacts.final_quantitative_metrics
 final_hybrid_metrics = artifacts.final_hybrid_metrics
 final_strategy = (
@@ -279,6 +293,7 @@ page = st.sidebar.radio(
         "Resultados",
         "Diagnóstico V2",
         "Investigación V3",
+        "Laboratorio V4",
         "Decisiones",
         "Explicabilidad",
         "Metodología",
@@ -287,7 +302,9 @@ page = st.sidebar.radio(
 )
 st.sidebar.divider()
 st.sidebar.markdown(f"**Estado:** {data_mode}")
-st.sidebar.caption("V1 · 2023–2024 | V2 protegida · 2025–2026 | V3 prospectiva")
+st.sidebar.caption(
+    "V1 · 2023–2024 | V2 protegida · 2025–2026 | V3/V4 prospectivas desde sep. 2026"
+)
 st.sidebar.success("V2 evaluada sin reajuste posterior")
 
 if page == "Inicio":
@@ -769,6 +786,238 @@ elif page == "Investigación V3":
         )
         risk_figure.update_layout(height=390, margin=dict(l=10, r=10, t=20, b=10))
         st.plotly_chart(risk_figure, width="stretch")
+
+elif page == "Laboratorio V4":
+    render_header(
+        "V4 · Laboratorio diario",
+        "Especialistas de riesgo, volatilidad HAR y tendencia; la dirección se abstiene si no "
+        "demuestra discriminación temporal.",
+    )
+    if v4_metrics_bundle is None or v4_equity_bundle is None or v4_decisions_bundle is None:
+        st.info(
+            "Los componentes V4 están implementados, pero este paquete todavía no contiene "
+            "su ejecución reproducible. Genérela con `qqq-agents v4-development`."
+        )
+    else:
+        validation = v4_metrics_bundle["subperiods"]["internal_validation"]
+        v4_validation = validation["v4_multiagent"]
+        validation_baselines = validation["baselines"]
+        buy_hold_validation = validation_baselines["buy_and_hold"]
+        st.warning(
+            "V4 es investigación, no un nuevo test final. La política se eligió con 2018–2022; "
+            "2023–agosto de 2026 es validación interna y septiembre de 2026 permanece cerrado."
+        )
+        columns = st.columns(5)
+        columns[0].metric("Rentabilidad anual", percentage(v4_validation["annualized_return"]))
+        columns[1].metric("Sharpe V4", f"{v4_validation['sharpe_ratio']:.3f}")
+        columns[2].metric(
+            "Sharpe Buy & Hold", f"{buy_hold_validation['sharpe_ratio']:.3f}"
+        )
+        columns[3].metric("Drawdown máximo", percentage(v4_validation["maximum_drawdown"]))
+        columns[4].metric("Exposición media", percentage(v4_validation["market_exposure"]))
+
+        validation_curves = v4_equity_bundle.loc[
+            "2023-01-01":"2026-08-31",
+            [
+                name
+                for name in (
+                    "v4_multiagent",
+                    "buy_and_hold",
+                    "sma_50_200",
+                    "trailing_volatility_target",
+                )
+                if name in v4_equity_bundle
+            ],
+        ]
+        rebased = validation_curves.div(validation_curves.iloc[0])
+        st.plotly_chart(equity_figure(rebased), width="stretch")
+
+        benchmark_rows = {"Multiagente V4 · propio": v4_validation}
+        benchmark_rows.update(
+            {
+                EQUITY_NAMES.get(name, name): values
+                for name, values in validation_baselines.items()
+            }
+        )
+        benchmark_table = pd.DataFrame(benchmark_rows).T[
+            [
+                "annualized_return",
+                "annualized_volatility",
+                "sharpe_ratio",
+                "maximum_drawdown",
+                "market_exposure",
+            ]
+        ]
+        benchmark_table.columns = [
+            "Rentabilidad anual",
+            "Volatilidad",
+            "Sharpe",
+            "Drawdown",
+            "Exposición",
+        ]
+        st.dataframe(
+            benchmark_table.style.format(
+                {
+                    "Rentabilidad anual": "{:.2%}",
+                    "Volatilidad": "{:.2%}",
+                    "Sharpe": "{:.3f}",
+                    "Drawdown": "{:.2%}",
+                    "Exposición": "{:.2%}",
+                }
+            ),
+            width="stretch",
+        )
+
+        drawdown_improvement = 1 - (
+            abs(v4_validation["maximum_drawdown"])
+            / abs(buy_hold_validation["maximum_drawdown"])
+        )
+        retained_return = (
+            v4_validation["annualized_return"] / buy_hold_validation["annualized_return"]
+        )
+        st.info(
+            f"Lectura honesta: V4 obtiene el mejor Sharpe de los cuatro métodos y reduce el "
+            f"drawdown de Buy & Hold en {percentage(drawdown_improvement)}, pero conserva "
+            f"{percentage(retained_return)} de su rentabilidad anual. No supera todas las "
+            "técnicas en todas las métricas."
+        )
+
+        st.markdown("### Auditoría de los especialistas")
+        direction_state = v4_decisions_bundle["direction_active"]
+        direction_active_rate = (
+            direction_state.mean()
+            if direction_state.dtype == bool
+            else direction_state.astype(str).str.lower().eq("true").mean()
+        )
+        agent_findings = pd.DataFrame(
+            [
+                {
+                    "Agente": "Riesgo a cinco sesiones",
+                    "Estado": "Activo",
+                    "Conclusión": (
+                        "AUC temporal anual superior al umbral; ajusta exposición ante colas."
+                    ),
+                },
+                {
+                    "Agente": "Dirección a cinco sesiones",
+                    "Estado": "Abstención",
+                    "Conclusión": (
+                        f"Activo en {direction_active_rate:.1%} de las decisiones; no se fuerza "
+                        "una señal cuando el AUC es insuficiente."
+                    ),
+                },
+                {
+                    "Agente": "Volatilidad HAR",
+                    "Estado": "Activo",
+                    "Conclusión": (
+                        "Estima riesgo futuro; no se interpreta como predicción de dirección."
+                    ),
+                },
+                {
+                    "Agente": "Tendencia multi-horizonte",
+                    "Estado": "Activo",
+                    "Conclusión": "Impone un límite del 70 % solo en tendencia bajista clara.",
+                },
+            ]
+        )
+        st.dataframe(agent_findings, hide_index=True, width="stretch")
+
+        chart_columns = st.columns(2)
+        daily_view = v4_decisions_bundle.loc["2023-01-01":"2026-08-31"].copy()
+        with chart_columns[0]:
+            risk_frame = daily_view[
+                ["risk_probability", "desired_position"]
+            ].rename(
+                columns={
+                    "risk_probability": "Probabilidad de riesgo",
+                    "desired_position": "Exposición",
+                }
+            )
+            risk_figure = px.scatter(
+                risk_frame,
+                x="Probabilidad de riesgo",
+                y="Exposición",
+                color="Exposición",
+                color_continuous_scale="Teal",
+            )
+            risk_figure.update_layout(height=360, margin=dict(l=10, r=10, t=25, b=10))
+            st.plotly_chart(risk_figure, width="stretch")
+        with chart_columns[1]:
+            vol_frame = daily_view[
+                ["forecast_volatility", "volatility_exposure"]
+            ].rename(
+                columns={
+                    "forecast_volatility": "Volatilidad prevista",
+                    "volatility_exposure": "Límite por volatilidad",
+                }
+            )
+            volatility_figure = px.scatter(
+                vol_frame,
+                x="Volatilidad prevista",
+                y="Límite por volatilidad",
+                color="Volatilidad prevista",
+                color_continuous_scale="Blues",
+            )
+            volatility_figure.update_layout(
+                height=360, margin=dict(l=10, r=10, t=25, b=10)
+            )
+            st.plotly_chart(volatility_figure, width="stretch")
+
+        robustness = v4_metrics_bundle["robustness"]
+        dsr = robustness["deflated_sharpe"]
+        pbo = robustness["candidate_family_cscv"]
+        st.markdown("### Control del sobreajuste")
+        robustness_columns = st.columns(3)
+        robustness_columns[0].metric(
+            "Configuraciones evaluadas",
+            f"{v4_metrics_bundle['configuration_evaluations']:,}".replace(",", "."),
+        )
+        robustness_columns[1].metric(
+            "Probabilidad Sharpe deflactado",
+            percentage(dsr["deflated_sharpe_probability"]),
+        )
+        robustness_columns[2].metric(
+            "PBO familia final",
+            percentage(pbo["probability_of_backtest_overfitting"]),
+        )
+        st.caption(
+            "El DSR penaliza las 1.660 evaluaciones. El PBO cubre únicamente las ocho series "
+            "finales exportadas y no debe interpretarse como una garantía global."
+        )
+        st.warning(
+            "Los diagnósticos estadísticos no confirman una ventaja persistente: el Sharpe "
+            f"deflactado solo alcanza una probabilidad del "
+            f"{percentage(dsr['deflated_sharpe_probability'])} y el PBO de la familia final es "
+            f"{percentage(pbo['probability_of_backtest_overfitting'])}. La conclusión correcta "
+            "es candidato prospectivo, no superioridad."
+        )
+        bootstrap_rows = []
+        for name, values in robustness["validation_block_bootstrap"].items():
+            bootstrap_rows.append(
+                {
+                    "Benchmark": EQUITY_NAMES.get(name, name),
+                    "Diferencia anual media": values["mean_difference"],
+                    "IC 95 % inferior": values["ci_95_lower"],
+                    "IC 95 % superior": values["ci_95_upper"],
+                    "P(V4 supera)": values["probability_strategy_outperforms"],
+                }
+            )
+        st.dataframe(
+            pd.DataFrame(bootstrap_rows).style.format(
+                {
+                    "Diferencia anual media": "{:.2%}",
+                    "IC 95 % inferior": "{:.2%}",
+                    "IC 95 % superior": "{:.2%}",
+                    "P(V4 supera)": "{:.1%}",
+                }
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(
+            "Bootstrap circular de bloques de 20 sesiones y 5.000 remuestreos. Compara "
+            "rentabilidad anual, no Sharpe ni drawdown; los tres intervalos incluyen cero."
+        )
 
 elif page == "Decisiones":
     render_header(

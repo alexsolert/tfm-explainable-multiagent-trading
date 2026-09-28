@@ -55,6 +55,13 @@ from qqq_agents.v3 import (
     load_v3_config,
     run_v3_walk_forward,
 )
+from qqq_agents.v4 import (
+    build_daily_research_frame,
+    deflated_sharpe_probability,
+    load_v4_config,
+    return_family,
+    run_v4_walk_forward,
+)
 
 
 def _download(config_path: Path) -> None:
@@ -428,6 +435,181 @@ def _v3_development(config_path: Path, v3_config_path: Path) -> None:
     )
     print(json.dumps(payload, indent=2, sort_keys=True))
     print(f"Saved V3 development artifacts to {output}")
+
+
+def _v4_download(v4_config_path: Path) -> None:
+    config = load_v4_config(v4_config_path)
+    config.data.raw_directory.mkdir(parents=True, exist_ok=True)
+    observations: dict[str, int] = {}
+    for alias, ticker in config.data.assets.items():
+        frame = download_market_data(
+            ticker=ticker,
+            start=config.data.start,
+            end=config.data.end,
+            destination=config.data.raw_directory / f"{alias}.csv",
+            auto_adjust=True,
+        )
+        observations[alias] = len(frame)
+    cash = download_yield_data(
+        ticker=config.data.cash_yield_ticker,
+        start=config.data.start,
+        end=config.data.end,
+        destination=config.data.raw_directory / "cash_yield.csv",
+    )
+    observations["cash_yield"] = len(cash)
+    print(json.dumps({"observations": observations}, indent=2, sort_keys=True))
+
+
+def _v4_prepare(config_path: Path, v4_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v4_config(v4_config_path)
+    markets = {
+        alias: load_market_data(config.data.raw_directory / f"{alias}.csv")
+        for alias in config.data.assets
+    }
+    cash_yield = load_yield_data(config.data.raw_directory / "cash_yield.csv")
+    frame = build_daily_research_frame(
+        markets,
+        cash_yield,
+        prediction_horizon=app_config.experiment.prediction_horizon_sessions,
+        risk_event_threshold=config.data.risk_event_threshold,
+    )
+    config.data.processed_path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(config.data.processed_path, index=True)
+    print(
+        json.dumps(
+            {
+                "rows": len(frame),
+                "start": str(frame.index.min().date()),
+                "end": str(frame.index.max().date()),
+                "destination": str(config.data.processed_path),
+            },
+            indent=2,
+        )
+    )
+
+
+def _v4_development(config_path: Path, v4_config_path: Path) -> None:
+    app_config = load_config(config_path)
+    config = load_v4_config(v4_config_path)
+    frame = pd.read_csv(
+        config.data.processed_path,
+        index_col="date",
+        parse_dates=["date", "target_end_date", "vol_target_end_date"],
+    )
+    result = run_v4_walk_forward(frame, app_config=app_config, v4_config=config)
+    output = Path("artifacts/v4_development")
+    output.mkdir(parents=True, exist_ok=True)
+    result.decisions.to_csv(output / "decisions.csv", index=True)
+    result.strategy.history.to_csv(output / "strategy.csv", index=True)
+    result.training_audit.to_csv(output / "training_audit.csv", index=False)
+    result.model_leaderboard.to_csv(output / "model_leaderboard.csv", index=False)
+    equity = pd.DataFrame({"v4_multiagent": result.strategy.history["equity"]})
+    for name, value in result.baselines.items():
+        equity[name] = value.history["equity"]
+    for name, value in result.ablations.items():
+        equity[f"ablation_{name}"] = value.history["equity"]
+    equity.to_csv(output / "equity.csv", index=True)
+
+    def period_metrics(backtest, start: str, end: str) -> dict[str, float]:
+        history = backtest.history.loc[start:end]
+        return calculate_metrics(
+            returns=history["strategy_return"],
+            turnover=history["turnover"],
+            asset_returns=history["asset_return"],
+            positions=history["applied_position"],
+            periods_per_year=252,
+        )
+
+    periods = {
+        "selection": (config.period.evaluation_start, config.period.selection_end),
+        "internal_validation": (
+            config.period.validation_start,
+            config.period.development_end,
+        ),
+    }
+    subperiods = {}
+    for name, (start, end) in periods.items():
+        subperiods[name] = {
+            "period": {"start": start, "end": end},
+            "v4_multiagent": period_metrics(result.strategy, start, end),
+            "baselines": {
+                key: period_metrics(value, start, end)
+                for key, value in result.baselines.items()
+            },
+            "ablations": {
+                key: period_metrics(value, start, end)
+                for key, value in result.ablations.items()
+            },
+        }
+    validation_start = config.period.validation_start
+    validation_end = config.period.development_end
+    validation_strategy_returns = result.strategy.history.loc[
+        validation_start:validation_end, "strategy_return"
+    ]
+    bootstrap = {
+        name: circular_block_bootstrap_difference(
+            validation_strategy_returns,
+            value.history.loc[validation_start:validation_end, "strategy_return"],
+            samples=5_000,
+            block_length=20,
+            random_seed=config.models.random_seed,
+            periods_per_year=252,
+        )
+        for name, value in result.baselines.items()
+    }
+    candidate_family = {
+        "v4_multiagent": result.strategy,
+        **result.baselines,
+        **{f"ablation_{name}": value for name, value in result.ablations.items()},
+    }
+    candidate_returns = return_family(candidate_family).loc[
+        validation_start:validation_end
+    ]
+    robustness = {
+        "validation_block_bootstrap": bootstrap,
+        "deflated_sharpe": deflated_sharpe_probability(
+            validation_strategy_returns,
+            trials=1_660,
+            periods_per_year=252,
+        ),
+        "candidate_family_cscv": probability_of_backtest_overfitting(
+            candidate_returns,
+            partitions=8,
+            periods_per_year=252,
+        ),
+        "cscv_scope_note": (
+            "CSCV covers the eight exported strategy/baseline/ablation return series, not all "
+            "1,660 policy evaluations. The DSR trial count applies the broader selection penalty."
+        ),
+    }
+    payload = {
+        "version": config.version,
+        "period": {
+            "start": config.period.evaluation_start,
+            "end": config.period.development_end,
+        },
+        "prospective_period_consulted": False,
+        "decision_frequency": "daily",
+        "v4_multiagent": result.strategy.metrics,
+        "baselines": {name: value.metrics for name, value in result.baselines.items()},
+        "ablations": {name: value.metrics for name, value in result.ablations.items()},
+        "subperiods": subperiods,
+        "configuration_evaluations": 1_660,
+        "robustness": robustness,
+        "research_scope": {
+            "risk_targets": [-0.02, -0.03, -0.04, -0.05],
+            "volatility_forecasts": ["HAR", "realized_20", "blend", "maximum"],
+            "target_volatility_range": [0.18, 0.32],
+            "trend_cap_range": [0.50, 1.00],
+            "selection_period_only": True,
+        },
+    }
+    (output / "metrics.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    print(f"Saved V4 development artifacts to {output}")
 
 
 def _freeze_v2(v2_config_path: Path) -> None:
@@ -856,6 +1038,12 @@ def main() -> None:
         default=Path("configs/v3.yaml"),
         help="Path to the independent V3 research configuration.",
     )
+    parser.add_argument(
+        "--v4-config",
+        type=Path,
+        default=Path("configs/v4.yaml"),
+        help="Path to the independent daily V4 research configuration.",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download", help="Download and normalize QQQ market data.")
     subparsers.add_parser("prepare", help="Build weekly features and future labels.")
@@ -896,6 +1084,12 @@ def main() -> None:
     subparsers.add_parser(
         "v3-development",
         help="Run V3 only over its declared development period.",
+    )
+    subparsers.add_parser("v4-download", help="Download daily V4 context snapshots.")
+    subparsers.add_parser("v4-prepare", help="Build the daily V4 research dataset.")
+    subparsers.add_parser(
+        "v4-development",
+        help="Run daily V4 over selection and internal-validation periods.",
     )
     baseline_parser = subparsers.add_parser(
         "baselines", help="Evaluate baselines without opening the final test period."
@@ -1025,6 +1219,12 @@ def main() -> None:
         _v3_prepare(args.config, args.v3_config)
     elif args.command == "v3-development":
         _v3_development(args.config, args.v3_config)
+    elif args.command == "v4-download":
+        _v4_download(args.v4_config)
+    elif args.command == "v4-prepare":
+        _v4_prepare(args.config, args.v4_config)
+    elif args.command == "v4-development":
+        _v4_development(args.config, args.v4_config)
     elif args.command == "baselines":
         _baselines(args.config, args.through)
     elif args.command == "train-quant":

@@ -27,6 +27,15 @@ continua y compara también contra un benchmark con objetivo de volatilidad. El 
 intentos descartados se documentan en
 [`docs/experiments/v3-protocol.md`](docs/experiments/v3-protocol.md).
 
+La V4 estudia decisiones diarias con especialistas separados de riesgo, volatilidad HAR,
+tendencia y dirección. Compara modelos lineales y no lineales con selección temporal, permite
+abstención, registra 1.660 evaluaciones de configuración y reserva septiembre de 2026 en adelante
+como periodo prospectivo. La revisión académica y el protocolo están en
+[`docs/research/v4-literature-review.md`](docs/research/v4-literature-review.md) y
+[`docs/experiments/v4-daily-protocol.md`](docs/experiments/v4-daily-protocol.md). Los resultados y
+sus advertencias estadísticas se registran en
+[`docs/experiments/2026-09-28-v4-internal-validation.md`](docs/experiments/2026-09-28-v4-internal-validation.md).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
@@ -116,6 +125,11 @@ uv run qqq-agents v2-protected-test --confirm-frozen-spec
 uv run qqq-agents v3-download
 uv run qqq-agents v3-prepare
 uv run qqq-agents v3-development
+
+# Construir y evaluar la investigación diaria V4
+uv run qqq-agents v4-download
+uv run qqq-agents v4-prepare
+uv run qqq-agents v4-development
 ```
 
 El comando `v2-protected-test` exige confirmación explícita y comprueba que el hash de
@@ -126,7 +140,7 @@ utilizado para diagnosticar V1 y, por tanto, forman parte del desarrollo de V2, 
 
 La aplicacion incluye un conjunto ligero de resultados congelados en `demo_data/`. Por ello, puede
 abrirse nada mas clonar el repositorio sin descargar QQQ, reentrenar modelos ni configurar una
-clave de API. La interfaz ofrece resultados V1/V2, un laboratorio V3, arquitectura, explorador
+clave de API. La interfaz ofrece resultados V1/V2, laboratorios V3/V4, arquitectura, explorador
 de decisiones, explicabilidad y metodología.
 
 ```bash

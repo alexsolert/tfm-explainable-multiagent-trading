@@ -33,6 +33,9 @@ FILES = (
     "v3_development/metrics.json",
     "v3_development/decisions.csv",
     "v3_development/equity.csv",
+    "v4_development/metrics.json",
+    "v4_development/decisions.csv",
+    "v4_development/equity.csv",
 )
 
 

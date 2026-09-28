@@ -1,0 +1,370 @@
+{
+  "ablations": {
+    "direction_only": {
+      "annualized_return": 0.19831038432878367,
+      "annualized_volatility": 0.23836113097250508,
+      "cumulative_return": 3.772562781944269,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9995406522737712,
+      "maximum_drawdown": -0.3511872536056887,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.878605365159739,
+      "total_turnover": 1.0
+    },
+    "risk_only": {
+      "annualized_return": 0.19039280161842576,
+      "annualized_volatility": 0.22501054228716033,
+      "cumulative_return": 3.506921799260181,
+      "directional_accuracy": 0.5606617647058824,
+      "market_exposure": 0.9812672809860552,
+      "maximum_drawdown": -0.3511573714947981,
+      "position_changes": 293.0,
+      "sharpe_ratio": 0.8874438182907475,
+      "total_turnover": 21.987673169734933
+    },
+    "trend_only": {
+      "annualized_return": 0.184076442653496,
+      "annualized_volatility": 0.20850578379227164,
+      "cumulative_return": 3.304467449069537,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9416628387689481,
+      "maximum_drawdown": -0.28526072623393717,
+      "position_changes": 93.0,
+      "sharpe_ratio": 0.9150869709902875,
+      "total_turnover": 28.600000000000005
+    },
+    "volatility_only": {
+      "annualized_return": 0.1922989845863592,
+      "annualized_volatility": 0.22942211384928865,
+      "cumulative_return": 3.5696509890335966,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9965073934914153,
+      "maximum_drawdown": -0.3511872536056877,
+      "position_changes": 45.0,
+      "sharpe_ratio": 0.8818477460870107,
+      "total_turnover": 3.9570762985453642
+    }
+  },
+  "baselines": {
+    "buy_and_hold": {
+      "annualized_return": 0.19831038432878367,
+      "annualized_volatility": 0.23836113097250508,
+      "cumulative_return": 3.772562781944269,
+      "directional_accuracy": 0.5611213235294118,
+      "market_exposure": 0.9995406522737712,
+      "maximum_drawdown": -0.3511872536056887,
+      "position_changes": 1.0,
+      "sharpe_ratio": 0.878605365159739,
+      "total_turnover": 1.0
+    },
+    "sma_50_200": {
+      "annualized_return": 0.18434386559124816,
+      "annualized_volatility": 0.20574839699794792,
+      "cumulative_return": 3.3128730910290454,
+      "directional_accuracy": 0.5551470588235294,
+      "market_exposure": 0.8180983004134129,
+      "maximum_drawdown": -0.28559353599511916,
+      "position_changes": 9.0,
+      "sharpe_ratio": 0.9256706287738401,
+      "total_turnover": 9.0
+    },
+    "trailing_volatility_target": {
+      "annualized_return": 0.18619571605762997,
+      "annualized_volatility": 0.21881531723212386,
+      "cumulative_return": 3.3714798293179777,
+      "directional_accuracy": 0.5597426470588235,
+      "market_exposure": 0.9765475648225659,
+      "maximum_drawdown": -0.34651003169708594,
+      "position_changes": 282.0,
+      "sharpe_ratio": 0.8901022162126133,
+      "total_turnover": 8.25433341471734
+    }
+  },
+  "configuration_evaluations": 1660,
+  "decision_frequency": "daily",
+  "period": {
+    "end": "2026-08-31",
+    "start": "2018-01-01"
+  },
+  "prospective_period_consulted": false,
+  "research_scope": {
+    "risk_targets": [
+      -0.02,
+      -0.03,
+      -0.04,
+      -0.05
+    ],
+    "selection_period_only": true,
+    "target_volatility_range": [
+      0.18,
+      0.32
+    ],
+    "trend_cap_range": [
+      0.5,
+      1.0
+    ],
+    "volatility_forecasts": [
+      "HAR",
+      "realized_20",
+      "blend",
+      "maximum"
+    ]
+  },
+  "robustness": {
+    "candidate_family_cscv": {
+      "combinations": 70,
+      "in_sample_winner_counts": {
+        "ablation_direction_only": 0,
+        "ablation_risk_only": 3,
+        "ablation_trend_only": 4,
+        "ablation_volatility_only": 0,
+        "buy_and_hold": 22,
+        "sma_50_200": 6,
+        "trailing_volatility_target": 10,
+        "v4_multiagent": 25
+      },
+      "partitions": 8,
+      "probability_of_backtest_overfitting": 0.9285714285714286
+    },
+    "cscv_scope_note": "CSCV covers the eight exported strategy/baseline/ablation return series, not all 1,660 policy evaluations. The DSR trial count applies the broader selection penalty.",
+    "deflated_sharpe": {
+      "deflated_sharpe_probability": 0.3115857264984656,
+      "expected_maximum_null_sharpe": 1.77958856122161,
+      "kurtosis": 7.016112326404873,
+      "observations": 918,
+      "observed_sharpe": 1.5217253383827425,
+      "skewness": 0.12140314976917484,
+      "trials": 1660
+    },
+    "validation_block_bootstrap": {
+      "buy_and_hold": {
+        "ci_95_lower": -0.07655555907168832,
+        "ci_95_upper": 0.0008427264565930019,
+        "mean_difference": -0.034256356319427805,
+        "probability_strategy_outperforms": 0.0278
+      },
+      "sma_50_200": {
+        "ci_95_lower": -0.044587255139516974,
+        "ci_95_upper": 0.15707567935131256,
+        "mean_difference": 0.04393957343423772,
+        "probability_strategy_outperforms": 0.796
+      },
+      "trailing_volatility_target": {
+        "ci_95_lower": -0.05586092067973499,
+        "ci_95_upper": 0.008238897717601416,
+        "mean_difference": -0.023115324074637053,
+        "probability_strategy_outperforms": 0.069
+      }
+    }
+  },
+  "subperiods": {
+    "internal_validation": {
+      "ablations": {
+        "direction_only": {
+          "annualized_return": 0.3196549669873827,
+          "annualized_volatility": 0.20197637328267637,
+          "cumulative_return": 1.7467555874092162,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.0,
+          "maximum_drawdown": -0.22768298832635137,
+          "position_changes": 0.0,
+          "sharpe_ratio": 1.4744808743825042,
+          "total_turnover": 0.0
+        },
+        "risk_only": {
+          "annualized_return": 0.30968090573410945,
+          "annualized_volatility": 0.18991120090321184,
+          "cumulative_return": 1.6718813183748753,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 0.9843568916302394,
+          "maximum_drawdown": -0.20988740069937306,
+          "position_changes": 151.0,
+          "sharpe_ratio": 1.5161687825560641,
+          "total_turnover": 6.497332681983426
+        },
+        "trend_only": {
+          "annualized_return": 0.2902075601264633,
+          "annualized_volatility": 0.1845961998022555,
+          "cumulative_return": 1.5299797788890372,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 0.9601307189542484,
+          "maximum_drawdown": -0.18206354623672694,
+          "position_changes": 39.0,
+          "sharpe_ratio": 1.4730958621285948,
+          "total_turnover": 11.700000000000001
+        },
+        "volatility_only": {
+          "annualized_return": 0.31053146096767437,
+          "annualized_volatility": 0.19676620069353914,
+          "cumulative_return": 1.6782078984119337,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 0.9984519643554944,
+          "maximum_drawdown": -0.22477839856368553,
+          "position_changes": 14.0,
+          "sharpe_ratio": 1.4733800341128418,
+          "total_turnover": 0.8300790995779028
+        }
+      },
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.3196549669873827,
+          "annualized_volatility": 0.20197637328267637,
+          "cumulative_return": 1.7467555874092162,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.0,
+          "maximum_drawdown": -0.22768298832635137,
+          "position_changes": 0.0,
+          "sharpe_ratio": 1.4744808743825042,
+          "total_turnover": 0.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.24294940552837407,
+          "annualized_volatility": 0.18948726716096734,
+          "cumulative_return": 1.2084136790853917,
+          "directional_accuracy": 0.5533769063180828,
+          "market_exposure": 0.8976034858387799,
+          "maximum_drawdown": -0.22768298832635103,
+          "position_changes": 3.0,
+          "sharpe_ratio": 1.242488569725718,
+          "total_turnover": 3.0
+        },
+        "trailing_volatility_target": {
+          "annualized_return": 0.30891514875075354,
+          "annualized_volatility": 0.19678035810929131,
+          "cumulative_return": 1.6661947638879062,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 0.9895049548218053,
+          "maximum_drawdown": -0.22666766248140646,
+          "position_changes": 33.0,
+          "sharpe_ratio": 1.4667538261012687,
+          "total_turnover": 1.2645579700687533
+        }
+      },
+      "period": {
+        "end": "2026-08-31",
+        "start": "2023-01-01"
+      },
+      "v4_multiagent": {
+        "annualized_return": 0.2870521526503591,
+        "annualized_volatility": 0.176077295479478,
+        "cumulative_return": 1.5075124660007018,
+        "directional_accuracy": 0.5664488017429193,
+        "market_exposure": 0.9092062524550154,
+        "maximum_drawdown": -0.1829383723453366,
+        "position_changes": 66.0,
+        "sharpe_ratio": 1.5217253383827425,
+        "total_turnover": 5.929094952975614
+      }
+    },
+    "selection": {
+      "ablations": {
+        "direction_only": {
+          "annualized_return": 0.11692610467587894,
+          "annualized_volatility": 0.26172649760205796,
+          "cumulative_return": 0.7375272863086493,
+          "directional_accuracy": 0.5559968228752978,
+          "market_exposure": 0.9992057188244639,
+          "maximum_drawdown": -0.3511872536056887,
+          "position_changes": 1.0,
+          "sharpe_ratio": 0.55393506925428,
+          "total_turnover": 1.0
+        },
+        "risk_only": {
+          "annualized_return": 0.1103212257115107,
+          "annualized_volatility": 0.24748094625928477,
+          "cumulative_return": 0.6867971523531016,
+          "directional_accuracy": 0.5552025416997617,
+          "market_exposure": 0.9790144910167451,
+          "maximum_drawdown": -0.3511573714947981,
+          "position_changes": 142.0,
+          "sharpe_ratio": 0.5468476315514111,
+          "total_turnover": 15.490340487751507
+        },
+        "trend_only": {
+          "annualized_return": 0.11223649198181751,
+          "annualized_volatility": 0.2243378126631816,
+          "cumulative_return": 0.7013841315995497,
+          "directional_accuracy": 0.5559968228752978,
+          "market_exposure": 0.9281969817315329,
+          "maximum_drawdown": -0.28526072623393717,
+          "position_changes": 54.0,
+          "sharpe_ratio": 0.5868256594142804,
+          "total_turnover": 16.900000000000006
+        },
+        "volatility_only": {
+          "annualized_return": 0.11287044764994336,
+          "annualized_volatility": 0.2505652130188799,
+          "cumulative_return": 0.7062346025277573,
+          "directional_accuracy": 0.5559968228752978,
+          "market_exposure": 0.9950895094141916,
+          "maximum_drawdown": -0.3511872536056877,
+          "position_changes": 31.0,
+          "sharpe_ratio": 0.5525297216783546,
+          "total_turnover": 3.1269971989674614
+        }
+      },
+      "baselines": {
+        "buy_and_hold": {
+          "annualized_return": 0.11692610467587894,
+          "annualized_volatility": 0.26172649760205796,
+          "cumulative_return": 0.7375272863086493,
+          "directional_accuracy": 0.5559968228752978,
+          "market_exposure": 0.9992057188244639,
+          "maximum_drawdown": -0.3511872536056887,
+          "position_changes": 1.0,
+          "sharpe_ratio": 0.55393506925428,
+          "total_turnover": 1.0
+        },
+        "sma_50_200": {
+          "annualized_return": 0.14336113964922492,
+          "annualized_volatility": 0.2168888448126117,
+          "cumulative_return": 0.9529280822129342,
+          "directional_accuracy": 0.556791104050834,
+          "market_exposure": 0.7601270849880858,
+          "maximum_drawdown": -0.28559353599511916,
+          "position_changes": 6.0,
+          "sharpe_ratio": 0.7269055256902476,
+          "total_turnover": 6.0
+        },
+        "trailing_volatility_target": {
+          "annualized_return": 0.10403142121261055,
+          "annualized_volatility": 0.2335581500738684,
+          "cumulative_return": 0.6395950845479055,
+          "directional_accuracy": 0.5536139793486894,
+          "market_exposure": 0.9670996823608488,
+          "maximum_drawdown": -0.34651003169708594,
+          "position_changes": 249.0,
+          "sharpe_ratio": 0.5408919256509374,
+          "total_turnover": 6.989775444648588
+        }
+      },
+      "period": {
+        "end": "2022-12-31",
+        "start": "2018-01-01"
+      },
+      "v4_multiagent": {
+        "annualized_return": 0.10613164807315667,
+        "annualized_volatility": 0.21341270754359545,
+        "cumulative_return": 0.6552372641888757,
+        "directional_accuracy": 0.5536139793486894,
+        "market_exposure": 0.8847882760728499,
+        "maximum_drawdown": -0.29583847389646956,
+        "position_changes": 109.0,
+        "sharpe_ratio": 0.5797476180510059,
+        "total_turnover": 11.166056849983832
+      }
+    }
+  },
+  "v4_multiagent": {
+    "annualized_return": 0.1790953903485828,
+    "annualized_volatility": 0.1985347902943623,
+    "cumulative_return": 3.1505280741425086,
+    "directional_accuracy": 0.5588235294117647,
+    "market_exposure": 0.8950848779648242,
+    "maximum_drawdown": -0.29583847389646956,
+    "position_changes": 175.0,
+    "sharpe_ratio": 0.9295025356033128,
+    "total_turnover": 17.095151802959446
+  },
+  "version": "4.0-daily-research"
+}

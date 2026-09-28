@@ -89,3 +89,7 @@ def test_versioned_demo_bundle_is_self_contained() -> None:
     assert artifacts.v2_model_leaderboard["selected"].any()
     assert artifacts.v2_protected_metrics["protected_test_consulted"] is True
     assert artifacts.v2_protected_metrics["deployment_recommendation"]["champion"] == "sma_50_200"
+    assert artifacts.v4_metrics["prospective_period_consulted"] is False
+    assert artifacts.v4_metrics["configuration_evaluations"] == 1_660
+    assert len(artifacts.v4_decisions) > 2_000
+    assert "v4_multiagent" in artifacts.v4_equity

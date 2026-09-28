@@ -86,14 +86,14 @@ def cash_returns_from_yield(
     annual_yield_percent: pd.Series,
     decision_index: pd.DatetimeIndex,
     *,
-    trading_days_per_year: int = 252,
+    calendar_days_per_year: int = 365,
 ) -> pd.Series:
     """Convert a quoted annualised T-bill yield into realised decision-period returns."""
 
     annual = annual_yield_percent.sort_index().astype(float).reindex(decision_index).ffill()
     if (annual.dropna() <= -100).any():
         raise ValueError("Annual yield cannot be less than or equal to -100%")
-    daily = (1 + annual / 100) ** (1 / trading_days_per_year) - 1
+    daily = (1 + annual / 100) ** (1 / calendar_days_per_year) - 1
     dates = pd.Series(decision_index, index=decision_index)
     previous = dates.shift(1)
     elapsed = (dates - previous).dt.days.fillna(0).clip(lower=0)

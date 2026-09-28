@@ -1,0 +1,48 @@
+version: "4.0-daily-research"
+
+period:
+  evaluation_start: "2018-01-01"
+  selection_end: "2022-12-31"
+  validation_start: "2023-01-01"
+  development_end: "2026-08-31"
+  prospective_start: "2026-09-01"
+  minimum_training_rows: 750
+
+models:
+  classifier_candidates:
+    - logistic
+    - histogram_gradient_boosting
+  validation_splits: 3
+  purge_sessions: 20
+  minimum_direction_auc: 0.52
+  minimum_risk_auc: 0.55
+  random_seed: 42
+
+allocation:
+  target_volatility: 0.32
+  minimum_exposure: 0.25
+  bearish_trend_cap: 0.70
+  risk_tolerance: 0.15
+  risk_sensitivity: 2.0
+  direction_floor: 0.75
+  smoothing: 0.50
+  minimum_rebalance: 0.05
+
+data:
+  start: "2010-01-01"
+  end: "2026-09-01"
+  raw_directory: data/raw/v4
+  processed_path: data/processed/v4_daily.csv
+  assets:
+    qqq: QQQ
+    spy: SPY
+    iwm: IWM
+    smh: SMH
+    tlt: TLT
+    vix: ^VIX
+    vix3m: ^VIX3M
+    hyg: HYG
+    lqd: LQD
+    qqqe: QQQE
+  cash_yield_ticker: ^IRX
+  risk_event_threshold: -0.04
