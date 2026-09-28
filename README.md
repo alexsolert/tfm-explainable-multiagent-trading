@@ -54,6 +54,14 @@ valor incremental. El diseño se describe en
 y sus resultados en
 [`docs/experiments/2026-09-28-v6-retrospective-assessment.md`](docs/experiments/2026-09-28-v6-retrospective-assessment.md).
 
+La V7 explora una frontera de crecimiento más ambiciosa, motivada por la literatura sobre
+tendencia, volatility scaling y apalancamiento condicionado al régimen. Predeclara dos perfiles
+con exposición máxima del 150 % y 175 %, los compara tanto con Buy & Hold como con controles de
+apalancamiento constante y conserva 2004–2022 como periodo exclusivo de selección. La revisión de
+evidencia, las limitaciones de comparabilidad y los resultados se documentan en
+[`docs/research/v7-internet-evidence.md`](docs/research/v7-internet-evidence.md) y
+[`research_results/v7`](research_results/v7).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.

@@ -1,0 +1,417 @@
+{
+  "interpretation": "V7 maps a return-risk frontier; leverage is not evidence of forecasting alpha. Compare each policy with constant-exposure controls as well as QQQ Buy & Hold.",
+  "policies": [
+    {
+      "defensive_exposure": 0.7,
+      "family": "volatility_managed_trend",
+      "maximum_exposure": 1.5,
+      "minimum_exposure": 0.7,
+      "moving_average_sessions": 250,
+      "name": "robust_growth",
+      "volatility_guard": null,
+      "volatility_target": 0.35
+    },
+    {
+      "defensive_exposure": 0.7,
+      "family": "trend_guard",
+      "maximum_exposure": 1.75,
+      "minimum_exposure": null,
+      "moving_average_sessions": 250,
+      "name": "high_growth",
+      "volatility_guard": 0.35,
+      "volatility_target": null
+    }
+  ],
+  "retrospective_assessment_is_not_holdout": true,
+  "robustness": {
+    "borrowing_spread_bps": {
+      "150": {
+        "high_growth": {
+          "annualized_return": 0.40561040418715755,
+          "annualized_volatility": 0.3107239622502595,
+          "cumulative_return": 2.4566144172439657,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.6562091503267975,
+          "maximum_drawdown": -0.2697897804264262,
+          "position_changes": 11.0,
+          "sharpe_ratio": 1.2519660217429032,
+          "total_turnover": 11.55
+        },
+        "robust_growth": {
+          "annualized_return": 0.3695175255574856,
+          "annualized_volatility": 0.2637379630093798,
+          "cumulative_return": 2.144099171658957,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.4100014115606012,
+          "maximum_drawdown": -0.24344762158631283,
+          "position_changes": 32.0,
+          "sharpe_ratio": 1.3249397946473882,
+          "total_turnover": 10.355835161715465
+        }
+      },
+      "300": {
+        "high_growth": {
+          "annualized_return": 0.39160965296163064,
+          "annualized_volatility": 0.31072750865021,
+          "cumulative_return": 2.3328326289160604,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.6562091503267975,
+          "maximum_drawdown": -0.2716760917293706,
+          "position_changes": 11.0,
+          "sharpe_ratio": 1.219702514788105,
+          "total_turnover": 11.55
+        },
+        "robust_growth": {
+          "annualized_return": 0.3607778701682507,
+          "annualized_volatility": 0.26373998792195325,
+          "cumulative_return": 2.0716221816114726,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.4100014115606012,
+          "maximum_drawdown": -0.2447501944137065,
+          "position_changes": 32.0,
+          "sharpe_ratio": 1.3006311211313457,
+          "total_turnover": 10.355835161715465
+        }
+      },
+      "500": {
+        "high_growth": {
+          "annualized_return": 0.3734647627703569,
+          "annualized_volatility": 0.31073234867866734,
+          "cumulative_return": 2.1772365035863968,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.6562091503267975,
+          "maximum_drawdown": -0.27414179569409125,
+          "position_changes": 11.0,
+          "sharpe_ratio": 1.177405369288193,
+          "total_turnover": 11.55
+        },
+        "robust_growth": {
+          "annualized_return": 0.34940421792197784,
+          "annualized_volatility": 0.2637427597191801,
+          "cumulative_return": 1.9791265020599602,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.4100014115606012,
+          "maximum_drawdown": -0.24645453140633578,
+          "position_changes": 32.0,
+          "sharpe_ratio": 1.2687623911262398,
+          "total_turnover": 10.355835161715465
+        }
+      },
+      "800": {
+        "high_growth": {
+          "annualized_return": 0.3473073766878074,
+          "annualized_volatility": 0.3107398298323412,
+          "cumulative_return": 1.9622973340295657,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.6562091503267975,
+          "maximum_drawdown": -0.27773918859292024,
+          "position_changes": 11.0,
+          "sharpe_ratio": 1.1154419486777458,
+          "total_turnover": 11.55
+        },
+        "robust_growth": {
+          "annualized_return": 0.3329127285351001,
+          "annualized_volatility": 0.26374706028428946,
+          "cumulative_return": 1.8486219721886648,
+          "directional_accuracy": 0.5686274509803921,
+          "market_exposure": 1.4100014115606012,
+          "maximum_drawdown": -0.24894452340793027,
+          "position_changes": 32.0,
+          "sharpe_ratio": 1.2220754929931896,
+          "total_turnover": 10.355835161715465
+        }
+      }
+    }
+  },
+  "selection_robustness_blocks": {
+    "early": {
+      "constant_100": {
+        "annualized_return": 0.04346292045732092,
+        "annualized_volatility": 0.23487170691158749,
+        "cumulative_return": 0.29059151169262565,
+        "directional_accuracy": 0.5340833884844474,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.5340403081996983,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.2983329769837466,
+        "total_turnover": 0.0
+      },
+      "constant_150": {
+        "annualized_return": 0.023704485833187627,
+        "annualized_volatility": 0.3523137352412732,
+        "cumulative_return": 0.1508196339033414,
+        "directional_accuracy": 0.5340833884844474,
+        "market_exposure": 1.5,
+        "maximum_drawdown": -0.706338746291746,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.24228178842807216,
+        "total_turnover": 0.0
+      },
+      "constant_175": {
+        "annualized_return": 0.008726574304445345,
+        "annualized_volatility": 0.41103512943605197,
+        "cumulative_return": 0.053478797157344715,
+        "directional_accuracy": 0.5340833884844474,
+        "market_exposure": 1.75,
+        "maximum_drawdown": -0.7720988442815823,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.22626731480239665,
+        "total_turnover": 0.0
+      },
+      "high_growth": {
+        "annualized_return": 0.04867413248818653,
+        "annualized_volatility": 0.271204329330022,
+        "cumulative_return": 0.32972375011157684,
+        "directional_accuracy": 0.5340833884844474,
+        "market_exposure": 1.4039377895433487,
+        "maximum_drawdown": -0.5301647836949488,
+        "position_changes": 18.0,
+        "sharpe_ratio": 0.3110351382838083,
+        "total_turnover": 18.900000000000002
+      },
+      "robust_growth": {
+        "annualized_return": 0.049672142808300235,
+        "annualized_volatility": 0.24087691246911588,
+        "cumulative_return": 0.3373296809000328,
+        "directional_accuracy": 0.5340833884844474,
+        "market_exposure": 1.2304140136939103,
+        "maximum_drawdown": -0.501532362799997,
+        "position_changes": 37.0,
+        "sharpe_ratio": 0.32179536919176016,
+        "total_turnover": 15.515437581745651
+      }
+    },
+    "late": {
+      "constant_100": {
+        "annualized_return": 0.15304843025293002,
+        "annualized_volatility": 0.24275775907988026,
+        "cumulative_return": 1.3474396708796097,
+        "directional_accuracy": 0.5662251655629139,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.3511870979431685,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.7086331053502315,
+        "total_turnover": 0.0
+      },
+      "constant_150": {
+        "annualized_return": 0.1945910260234187,
+        "annualized_volatility": 0.36415503228715923,
+        "cumulative_return": 1.9020349361621394,
+        "directional_accuracy": 0.5662251655629139,
+        "market_exposure": 1.5,
+        "maximum_drawdown": -0.5065067676858006,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.6717635281901907,
+        "total_turnover": 0.0
+      },
+      "constant_175": {
+        "annualized_return": 0.2090380215867793,
+        "annualized_volatility": 0.4248537824303259,
+        "cumulative_return": 2.118785214854539,
+        "directional_accuracy": 0.5662251655629139,
+        "market_exposure": 1.75,
+        "maximum_drawdown": -0.5742123869315292,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.6612298706788693,
+        "total_turnover": 0.0
+      },
+      "high_growth": {
+        "annualized_return": 0.24947889985112348,
+        "annualized_volatility": 0.309485720407905,
+        "cumulative_return": 2.7984452351172076,
+        "directional_accuracy": 0.5662251655629139,
+        "market_exposure": 1.5059271523178808,
+        "maximum_drawdown": -0.4067409374983235,
+        "position_changes": 15.0,
+        "sharpe_ratio": 0.875748180140078,
+        "total_turnover": 15.75
+      },
+      "robust_growth": {
+        "annualized_return": 0.20243595074245935,
+        "annualized_volatility": 0.26493616929540514,
+        "cumulative_return": 2.01811860277973,
+        "directional_accuracy": 0.5662251655629139,
+        "market_exposure": 1.281465894588524,
+        "maximum_drawdown": -0.35341445289595985,
+        "position_changes": 70.0,
+        "sharpe_ratio": 0.8293574728089992,
+        "total_turnover": 13.358566781252005
+      }
+    },
+    "middle": {
+      "constant_100": {
+        "annualized_return": 0.1587974671579251,
+        "annualized_volatility": 0.1726456380012971,
+        "cumulative_return": 1.8024944718491986,
+        "directional_accuracy": 0.5459704880817253,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.1610440912828912,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.9403370708117917,
+        "total_turnover": 0.0
+      },
+      "constant_150": {
+        "annualized_return": 0.22375111764591749,
+        "annualized_volatility": 0.2589676484340939,
+        "cumulative_return": 3.103512239790133,
+        "directional_accuracy": 0.5459704880817253,
+        "market_exposure": 1.5,
+        "maximum_drawdown": -0.23679472536178314,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.9097897293200797,
+        "total_turnover": 0.0
+      },
+      "constant_175": {
+        "annualized_return": 0.2540373257355999,
+        "annualized_volatility": 0.30212865500560376,
+        "cumulative_return": 3.868475634392044,
+        "directional_accuracy": 0.5459704880817253,
+        "market_exposure": 1.75,
+        "maximum_drawdown": -0.2732854326636843,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.9010618783873119,
+        "total_turnover": 0.0
+      },
+      "high_growth": {
+        "annualized_return": 0.15997234208592892,
+        "annualized_volatility": 0.2623501041596786,
+        "cumulative_return": 1.822422010533614,
+        "directional_accuracy": 0.5459704880817253,
+        "market_exposure": 1.6337968217934167,
+        "maximum_drawdown": -0.27579523399025485,
+        "position_changes": 30.0,
+        "sharpe_ratio": 0.6974752977264169,
+        "total_turnover": 31.5
+      },
+      "robust_growth": {
+        "annualized_return": 0.16095008404075495,
+        "annualized_volatility": 0.22354928745700794,
+        "cumulative_return": 1.8390983540634984,
+        "directional_accuracy": 0.5459704880817253,
+        "market_exposure": 1.402609753733874,
+        "maximum_drawdown": -0.22603899615623801,
+        "position_changes": 47.0,
+        "sharpe_ratio": 0.7798779746016375,
+        "total_turnover": 21.65544695366132
+      }
+    }
+  },
+  "selection_uses_only_data_through": "2022-12-31",
+  "subperiods": {
+    "retrospective": {
+      "constant_100": {
+        "annualized_return": 0.3196549245775242,
+        "annualized_volatility": 0.20197634570688852,
+        "cumulative_return": 1.74675526584437,
+        "directional_accuracy": 0.5686274509803921,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.22768304537115625,
+        "position_changes": 0.0,
+        "sharpe_ratio": 1.4744808881229359,
+        "total_turnover": 0.0
+      },
+      "constant_150": {
+        "annualized_return": 0.44961559772941917,
+        "annualized_volatility": 0.3029362888909417,
+        "cumulative_return": 2.867417949467688,
+        "directional_accuracy": 0.5686274509803921,
+        "market_exposure": 1.5,
+        "maximum_drawdown": -0.3285715917464789,
+        "position_changes": 0.0,
+        "sharpe_ratio": 1.3770038639418287,
+        "total_turnover": 0.0
+      },
+      "constant_175": {
+        "annualized_return": 0.5135837537955077,
+        "annualized_volatility": 0.353416797587703,
+        "cumulative_return": 3.5262424104533157,
+        "directional_accuracy": 0.5686274509803921,
+        "market_exposure": 1.75,
+        "maximum_drawdown": -0.37660170872591214,
+        "position_changes": 0.0,
+        "sharpe_ratio": 1.3491478983235192,
+        "total_turnover": 0.0
+      },
+      "high_growth": {
+        "annualized_return": 0.40561040418715755,
+        "annualized_volatility": 0.3107239622502595,
+        "cumulative_return": 2.4566144172439657,
+        "directional_accuracy": 0.5686274509803921,
+        "market_exposure": 1.6562091503267975,
+        "maximum_drawdown": -0.2697897804264262,
+        "position_changes": 11.0,
+        "sharpe_ratio": 1.2519660217429032,
+        "total_turnover": 11.55
+      },
+      "robust_growth": {
+        "annualized_return": 0.3695175255574856,
+        "annualized_volatility": 0.2637379630093798,
+        "cumulative_return": 2.144099171658957,
+        "directional_accuracy": 0.5686274509803921,
+        "market_exposure": 1.4100014115606012,
+        "maximum_drawdown": -0.24344762158631283,
+        "position_changes": 32.0,
+        "sharpe_ratio": 1.3249397946473882,
+        "total_turnover": 10.355835161715465
+      }
+    },
+    "selection": {
+      "constant_100": {
+        "annualized_return": 0.11928853926137495,
+        "annualized_volatility": 0.21679486714902887,
+        "cumulative_return": 7.490397213930642,
+        "directional_accuracy": 0.5486096592097011,
+        "market_exposure": 1.0,
+        "maximum_drawdown": -0.5340403081996983,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.6284777383295655,
+        "total_turnover": 0.0
+      },
+      "constant_150": {
+        "annualized_return": 0.14788289131345422,
+        "annualized_volatility": 0.32520421286745793,
+        "cumulative_return": 12.704576902713058,
+        "directional_accuracy": 0.5486096592097011,
+        "market_exposure": 1.5,
+        "maximum_drawdown": -0.706338746291746,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.5872898845617492,
+        "total_turnover": 0.0
+      },
+      "constant_175": {
+        "annualized_return": 0.15727051752901788,
+        "annualized_volatility": 0.3794091185246488,
+        "cumulative_return": 14.995737434954044,
+        "directional_accuracy": 0.5486096592097011,
+        "market_exposure": 1.75,
+        "maximum_drawdown": -0.7720988442815823,
+        "position_changes": 0.0,
+        "sharpe_ratio": 0.575522127423671,
+        "total_turnover": 0.0
+      },
+      "high_growth": {
+        "annualized_return": 0.15026993302010605,
+        "annualized_volatility": 0.2807452887253002,
+        "cumulative_return": 13.255722907675377,
+        "directional_accuracy": 0.5486096592097011,
+        "market_exposure": 1.5208132970938741,
+        "maximum_drawdown": -0.5301647836949488,
+        "position_changes": 63.0,
+        "sharpe_ratio": 0.63980428151815,
+        "total_turnover": 66.15
+      },
+      "robust_growth": {
+        "annualized_return": 0.1371121130866899,
+        "annualized_volatility": 0.2426672346997443,
+        "cumulative_return": 10.459224388855478,
+        "directional_accuracy": 0.5486096592097011,
+        "market_exposure": 1.3099660174784142,
+        "maximum_drawdown": -0.501532362799997,
+        "position_changes": 154.0,
+        "sharpe_ratio": 0.6514289468402445,
+        "total_turnover": 50.52945131665898
+      }
+    }
+  },
+  "version": "7.0-growth-frontier"
+}

@@ -1,0 +1,26 @@
+version: "7.0-growth-frontier"
+
+period:
+  selection_start: "2004-01-01"
+  selection_end: "2022-12-31"
+  retrospective_start: "2023-01-01"
+  retrospective_end: "2026-08-31"
+
+policies:
+  - name: robust_growth
+    family: volatility_managed_trend
+    moving_average_sessions: 250
+    maximum_exposure: 1.50
+    defensive_exposure: 0.70
+    volatility_target: 0.35
+    minimum_exposure: 0.70
+  - name: high_growth
+    family: trend_guard
+    moving_average_sessions: 250
+    maximum_exposure: 1.75
+    defensive_exposure: 0.70
+    volatility_guard: 0.35
+
+costs:
+  transaction_cost_bps: 10
+  borrowing_spread_bps: 150
