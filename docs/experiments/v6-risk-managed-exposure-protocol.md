@@ -22,11 +22,11 @@ El agente de volatilidad compara HAR-Ridge, histogram gradient boosting, volatil
 
 ## Políticas comparadas
 
-Se comparan dos familias y cinco límites máximos de exposición: 100 %, 110 %, 115 %, 120 % y 125 %.
+Se comparan tres familias y cinco límites máximos de exposición: 100 %, 110 %, 115 %, 120 % y 125 %.
 
-La familia `joint` exige confirmación conjunta de retorno, tendencia y riesgo, dimensiona la posición por volatilidad y aplica reentrada gradual. La familia `trend` utiliza una regla deliberadamente parsimoniosa: asigna la exposición máxima cuando al menos la mitad de las cuatro señales de tendencia son positivas y limita la posición al 70 % en caso contrario. Esta segunda familia funciona también como ablación del agente de retorno.
+La familia `joint` exige confirmación conjunta de retorno, tendencia y riesgo, dimensiona la posición por volatilidad y aplica reentrada gradual. La familia `trend` utiliza una regla deliberadamente parsimoniosa: asigna la exposición máxima cuando al menos la mitad de las cuatro señales de tendencia son positivas y limita la posición al 70 % en caso contrario. La familia `guarded_trend` añade un único veto: si la previsión de volatilidad anualizada supera el 40 %, la exposición queda limitada al 70 % independientemente de la tendencia. Este umbral se selecciona sobre 2004–2022 y representa un régimen excepcional, no volatility targeting continuo. Las dos familias de tendencia funcionan también como ablaciones del agente de retorno.
 
-El backtest deduce diez puntos básicos por cambio unitario de exposición. La fracción superior al 100 % paga el rendimiento del efectivo más un spread anual de 150 puntos básicos. La política seleccionada debe superar a Buy & Hold en rentabilidad anual y Sharpe y mantener un drawdown no mayor durante 2004–2022. Si varias políticas cumplen, se aplica una puntuación predefinida que penaliza drawdown y rotación.
+El backtest deduce diez puntos básicos por cambio unitario de exposición. La fracción superior al 100 % paga el rendimiento del efectivo más un spread anual de 150 puntos básicos. La política seleccionada debe superar a Buy & Hold en rentabilidad anual y Sharpe y mantener un drawdown no mayor durante 2004–2022. Si varias políticas cumplen, se aplica una puntuación predefinida que penaliza drawdown y rotación. V6.1 amplía así el conjunto a quince políticas; esta ampliación se incorpora al número de ensayos del Deflated Sharpe Ratio.
 
 ## Robustez
 

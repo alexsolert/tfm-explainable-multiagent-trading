@@ -19,6 +19,7 @@ from qqq_agents.v6.models import fit_return_model
 from qqq_agents.v6.policies import (
     ExposureSelection,
     build_exposure_policy,
+    build_guarded_trend_policy,
     build_trend_exposure_policy,
     policy_name,
     select_exposure_policy,
@@ -301,7 +302,15 @@ def run_v6_walk_forward(
         )
         for maximum in v6_config.allocation.maximum_exposures
     }
-    policy_details = {**joint_policies, **trend_policies}
+    guarded_policies = {
+        policy_name(maximum, "guarded_trend"): build_guarded_trend_policy(
+            decisions,
+            maximum_exposure=maximum,
+            config=v6_config.allocation,
+        )
+        for maximum in v6_config.allocation.maximum_exposures
+    }
+    policy_details = {**joint_policies, **trend_policies, **guarded_policies}
     policies = {
         name: run_exposure_backtest(
             close,

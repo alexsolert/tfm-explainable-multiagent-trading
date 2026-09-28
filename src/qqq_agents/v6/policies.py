@@ -115,6 +115,39 @@ def build_trend_exposure_policy(
     return pd.DataFrame.from_records(records).set_index("date")
 
 
+def build_guarded_trend_policy(
+    decisions: pd.DataFrame,
+    *,
+    maximum_exposure: float,
+    config: AllocationConfig,
+) -> pd.DataFrame:
+    """Trend exposure with a sparse veto under exceptional forecast volatility."""
+
+    records: list[dict[str, object]] = []
+    for timestamp, row in decisions.iterrows():
+        trend = float(row["weekly_trend_score"])
+        forecast_volatility = float(row["forecast_volatility"])
+        guarded = forecast_volatility > config.volatility_guard
+        if guarded:
+            target, state = config.guard_exposure, "VOLATILITY_GUARD"
+        elif trend >= 0.5:
+            target, state = maximum_exposure, "TREND_FAVOURABLE"
+        else:
+            target, state = config.bearish_trend_cap, "TREND_BEARISH"
+        records.append(
+            {
+                "date": timestamp,
+                "desired_position": float(target),
+                "policy_state": state,
+                "favourable": trend >= 0.5 and not guarded,
+                "risk_cap": np.nan,
+                "volatility_target": config.guard_exposure if guarded else np.nan,
+                "maximum_exposure": maximum_exposure,
+            }
+        )
+    return pd.DataFrame.from_records(records).set_index("date")
+
+
 def select_exposure_policy(
     metrics: dict[str, dict[str, float]],
     *,

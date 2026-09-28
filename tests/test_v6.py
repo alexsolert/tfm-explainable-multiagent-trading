@@ -8,7 +8,11 @@ import pytest
 from qqq_agents.config import load_config
 from qqq_agents.v6 import build_v6_research_frame, load_v6_config, run_v6_walk_forward
 from qqq_agents.v6.backtest import run_exposure_backtest
-from qqq_agents.v6.policies import build_exposure_policy, build_trend_exposure_policy
+from qqq_agents.v6.policies import (
+    build_exposure_policy,
+    build_guarded_trend_policy,
+    build_trend_exposure_policy,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +111,23 @@ def test_v6_trend_policy_is_parsimonious() -> None:
     assert detail["desired_position"].tolist() == [1.20, 0.70]
 
 
+def test_v6_volatility_guard_overrides_favourable_trend() -> None:
+    index = pd.date_range("2024-01-01", periods=2, freq="B")
+    detail = build_guarded_trend_policy(
+        pd.DataFrame(
+            {
+                "weekly_trend_score": [1.0, 1.0],
+                "forecast_volatility": [0.30, 0.50],
+            },
+            index=index,
+        ),
+        maximum_exposure=1.15,
+        config=load_v6_config(ROOT / "configs/v6.yaml").allocation,
+    )
+    assert detail["desired_position"].tolist() == [1.15, 0.70]
+    assert detail.iloc[1]["policy_state"] == "VOLATILITY_GUARD"
+
+
 def test_v6_walk_forward_is_purged_and_bounded(v6_frame: pd.DataFrame) -> None:
     config = load_v6_config(ROOT / "configs/v6.yaml")
     config = config.model_copy(
@@ -146,7 +167,7 @@ def test_versioned_v6_result_beats_buy_and_hold_but_preserves_uncertainty() -> N
     strategy = retrospective["v6_selected"]
     benchmark = retrospective["baselines"]["buy_and_hold"]
 
-    assert metrics["selected_policy"] == "trend_120"
+    assert metrics["selected_policy"] == "guarded_trend_115"
     assert metrics["retrospective_assessment_is_not_holdout"] is True
     assert strategy["annualized_return"] > benchmark["annualized_return"]
     assert strategy["sharpe_ratio"] > benchmark["sharpe_ratio"]

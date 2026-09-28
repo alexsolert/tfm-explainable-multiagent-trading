@@ -1,4 +1,4 @@
-version: "6.0-risk-managed-exposure"
+version: "6.1-volatility-guard"
 
 period:
   evaluation_start: "2004-01-01"
@@ -50,6 +50,8 @@ allocation:
   maximum_daily_reentry: 0.10
   minimum_rebalance: 0.05
   borrowing_spread_bps: 150
+  volatility_guard: 0.40
+  guard_exposure: 0.70
 
 selection:
   minimum_return_improvement: 0.00

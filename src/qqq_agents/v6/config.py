@@ -92,6 +92,8 @@ class AllocationConfig(StrictModel):
     maximum_daily_reentry: float = Field(gt=0, le=0.5)
     minimum_rebalance: float = Field(ge=0, lt=0.25)
     borrowing_spread_bps: float = Field(ge=0, le=1000)
+    volatility_guard: float = Field(gt=0.2, le=1.5)
+    guard_exposure: float = Field(ge=0, le=1)
 
     @model_validator(mode="after")
     def valid_limits(self) -> AllocationConfig:
@@ -103,6 +105,8 @@ class AllocationConfig(StrictModel):
             raise ValueError("V6 must retain an unlevered control")
         if self.maximum_exposures[-1] > 1.25:
             raise ValueError("V6 exposure is capped at 125%")
+        if self.guard_exposure < self.minimum_exposure:
+            raise ValueError("V6 guard exposure cannot be below minimum exposure")
         return self
 
 
