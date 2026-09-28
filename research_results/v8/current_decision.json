@@ -1,0 +1,52 @@
+{
+  "as_of": "2026-08-31T00:00:00",
+  "framework_version": "8.0-defensible-framework",
+  "agents": {
+    "trend": {
+      "score": 0.8,
+      "vote": 0.6000000000000001
+    },
+    "volatility": {
+      "annualized_forecast": 0.1836681625553882,
+      "risk_level": 0.0
+    },
+    "drawdown": {
+      "current_252": -0.0387887386729008,
+      "risk_level": 0.0,
+      "authority": "advisory"
+    },
+    "relative_strength": {
+      "qqq_vs_spy_20": 0.0114595855262793,
+      "vote": 1.0
+    }
+  },
+  "committee_score": 0.52,
+  "profiles": {
+    "conservative": {
+      "label": "Conservador",
+      "exposure": 1.15,
+      "action": "HOLD",
+      "state": "GROWTH",
+      "confidence": 0.8,
+      "explanation": "Estado GROWTH; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 115%."
+    },
+    "balanced": {
+      "label": "Equilibrado",
+      "exposure": 1.5,
+      "action": "HOLD",
+      "state": "VOLATILITY_MANAGED",
+      "confidence": 0.8,
+      "explanation": "Estado VOLATILITY_MANAGED; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 150%."
+    },
+    "aggressive": {
+      "label": "Agresivo",
+      "exposure": 1.75,
+      "action": "HOLD",
+      "state": "GROWTH",
+      "confidence": 0.8,
+      "explanation": "Estado GROWTH; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 175%."
+    }
+  },
+  "execution": "paper_only",
+  "disclaimer": "Experimental academic output; not investment advice."
+}

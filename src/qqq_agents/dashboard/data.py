@@ -39,6 +39,10 @@ class DashboardArtifacts:
     v4_metrics: dict[str, Any] | None
     v4_decisions: pd.DataFrame | None
     v4_equity: pd.DataFrame | None
+    v8_metrics: dict[str, Any] | None
+    v8_decisions: pd.DataFrame | None
+    v8_equity: pd.DataFrame | None
+    v8_current_decision: dict[str, Any] | None
 
 
 def _optional_bundle(
@@ -151,6 +155,19 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         "strategy": v4_root / "equity.csv",
     }
     v4_metrics, v4_decisions, v4_equity = _optional_bundle(v4_paths)
+    v8_root = artifact_root / "v8_final"
+    v8_paths = {
+        "metrics": v8_root / "metrics.json",
+        "decisions": v8_root / "decisions.csv",
+        "strategy": v8_root / "equity.csv",
+    }
+    v8_metrics, v8_decisions, v8_equity = _optional_bundle(v8_paths)
+    v8_current_path = v8_root / "current_decision.json"
+    v8_current_decision = (
+        json.loads(v8_current_path.read_text(encoding="utf-8"))
+        if v8_current_path.exists()
+        else None
+    )
     return DashboardArtifacts(
         metrics=metrics,
         decisions=decisions.sort_index(),
@@ -179,4 +196,8 @@ def load_dashboard_artifacts(root: str | Path = "artifacts") -> DashboardArtifac
         v4_metrics=v4_metrics,
         v4_decisions=v4_decisions,
         v4_equity=v4_equity,
+        v8_metrics=v8_metrics,
+        v8_decisions=v8_decisions,
+        v8_equity=v8_equity,
+        v8_current_decision=v8_current_decision,
     )

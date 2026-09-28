@@ -17,7 +17,7 @@ from qqq_agents.dashboard.data import DashboardArtifacts, load_dashboard_artifac
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_ARTIFACTS = ROOT / "artifacts"
 DEMO_ARTIFACTS = ROOT / "demo_data"
-DASHBOARD_SCHEMA_VERSION = "v4-daily-1"
+DASHBOARD_SCHEMA_VERSION = "v8-final-1"
 
 COLORS = {
     "Multiagente V2": "#0f766e",
@@ -265,6 +265,10 @@ v3_equity_bundle = getattr(artifacts, "v3_equity", None)
 v4_metrics_bundle = getattr(artifacts, "v4_metrics", None)
 v4_decisions_bundle = getattr(artifacts, "v4_decisions", None)
 v4_equity_bundle = getattr(artifacts, "v4_equity", None)
+v8_metrics_bundle = getattr(artifacts, "v8_metrics", None)
+v8_decisions_bundle = getattr(artifacts, "v8_decisions", None)
+v8_equity_bundle = getattr(artifacts, "v8_equity", None)
+v8_current_decision = getattr(artifacts, "v8_current_decision", None)
 final_metrics = artifacts.final_quantitative_metrics
 final_hybrid_metrics = artifacts.final_hybrid_metrics
 final_strategy = (
@@ -278,9 +282,16 @@ headline_strategy = (
     else final_strategy
 )
 headline_decisions = (
-    len(v2_protected_decisions)
+    len(v8_decisions_bundle)
+    if v8_decisions_bundle is not None
+    else len(v2_protected_decisions)
     if v2_protected_decisions is not None
     else 105
+)
+v8_headline = (
+    v8_metrics_bundle["subperiods"]["retrospective"]["balanced"]
+    if v8_metrics_bundle is not None
+    else None
 )
 
 st.sidebar.markdown("# ◈ QQQ Multi-Agent Lab")
@@ -290,6 +301,7 @@ page = st.sidebar.radio(
     (
         "Inicio",
         "Arquitectura",
+        "V8 final",
         "Resultados",
         "Diagnóstico V2",
         "Investigación V3",
@@ -303,9 +315,9 @@ page = st.sidebar.radio(
 st.sidebar.divider()
 st.sidebar.markdown(f"**Estado:** {data_mode}")
 st.sidebar.caption(
-    "V1 · 2023–2024 | V2 protegida · 2025–2026 | V3/V4 prospectivas desde sep. 2026"
+    "V8 · tres perfiles explicables | salida actual en modo paper trading"
 )
-st.sidebar.success("V2 evaluada sin reajuste posterior")
+st.sidebar.success("V8 reproducible y auditada")
 
 if page == "Inicio":
     st.markdown(
@@ -314,20 +326,24 @@ if page == "Inicio":
           <div class="eyebrow">Trabajo Final de Máster · Alex Soler Trias</div>
           <h1>Un comité de agentes que razona, decide y explica</h1>
           <p>Framework experimental sobre QQQ que combina modelos cuantitativos, agentes LLM y
-          un coordinador jerárquico. La V2 calibra el riesgo, admite exposición gradual y conserva
-          cada evidencia para reconstruir las decisiones de extremo a extremo.</p>
+          un coordinador jerárquico. La V8 ofrece perfiles conservador, equilibrado y agresivo,
+          conserva cada evidencia y produce una salida utilizable en paper trading.</p>
           <span class="badge">Long-biased</span><span class="badge">Walk-forward purgado</span>
-          <span class="badge">0 / 50 / 100 %</span><span class="badge">Test protegido</span>
+          <span class="badge">25–175 %</span><span class="badge">Tres perfiles de riesgo</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
     columns = st.columns(4)
+    displayed_headline = v8_headline or headline_strategy
     columns[0].metric(
-        "Rentabilidad V2 protegida", percentage(headline_strategy["cumulative_return"])
+        "Rentabilidad anual V8 equilibrada",
+        percentage(displayed_headline.get("annualized_return", 0.0)),
     )
-    columns[1].metric("Sharpe", f"{headline_strategy['sharpe_ratio']:.3f}")
-    columns[2].metric("Drawdown máximo", percentage(headline_strategy["maximum_drawdown"]))
+    columns[1].metric("Sharpe", f"{displayed_headline['sharpe_ratio']:.3f}")
+    columns[2].metric(
+        "Drawdown máximo", percentage(displayed_headline["maximum_drawdown"])
+    )
     columns[3].metric("Decisiones auditadas", str(headline_decisions))
 
     st.markdown("### Qué demuestra el prototipo")
@@ -352,9 +368,9 @@ if page == "Inicio":
         )
 
     st.info(
-        "Hallazgo protegido: V2 redujo el drawdown frente a Buy & Hold y superó a SMA 50/200, "
-        "pero no superó la rentabilidad ni el Sharpe de Buy & Hold. El resultado se muestra sin "
-        "reajustes posteriores."
+        "Resultado retrospectivo, no garantía prospectiva: el perfil equilibrado mejora la "
+        "rentabilidad y reduce el drawdown frente a Buy & Hold en 2023–agosto de 2026. La web "
+        "muestra también periodos desfavorables, benchmarks equivalentes e incertidumbre."
     )
 
 elif page == "Arquitectura":
@@ -363,15 +379,15 @@ elif page == "Arquitectura":
         "Las capas separan predicción, razonamiento contextual, coordinación y control de riesgo.",
     )
     labels = [
-        "Técnico",
-        "Momentum",
-        "Riesgo",
-        "Contexto",
-        "Sentimiento",
-        "Validador",
+        "Tendencia",
+        "Volatilidad",
+        "Drawdown",
+        "Fuerza relativa",
+        "Contexto LLM",
+        "Validador estratégico",
         "Coordinador",
-        "Veto de riesgo",
-        "BUY / HOLD / SELL",
+        "Control de riesgo",
+        "Exposición 25–175 %",
     ]
     figure = go.Figure(
         go.Sankey(
@@ -397,15 +413,181 @@ elif page == "Arquitectura":
 
     layer_columns = st.columns(4)
     descriptions = (
-        ("01 · Datos", "Variables técnicas de QQQ fechadas y preparadas sin información futura."),
-        ("02 · Agentes", "Señal, confianza, explicación y evidencia bajo un contrato común."),
-        ("03 · Coordinación", "Suma ponderada, umbrales de acción y personalidad conservadora."),
-        ("04 · Salida", "Posición binaria long-only y traza completa de la deliberación."),
+        ("01 · Datos", "QQQ, SPY, VIX y efectivo, fechados sin información futura."),
+        ("02 · Agentes", "Tendencia, volatilidad, drawdown y contexto bajo un contrato común."),
+        ("03 · Coordinación", "Autoridad acotada y tres perfiles explícitos de riesgo."),
+        ("04 · Salida", "Exposición continua, explicación y traza preparada para paper trading."),
     )
     for column, (title, description) in zip(layer_columns, descriptions, strict=True):
         with column.container(border=True):
             st.markdown(f"**{title}**")
             st.caption(description)
+
+elif page == "V8 final":
+    render_header(
+        "V8 · Comité de inversión explicable",
+        "Tres perfiles de exposición a QQQ, benchmarks de riesgo equivalente y salida actual "
+        "preparada para paper trading.",
+    )
+    if (
+        v8_metrics_bundle is None
+        or v8_equity_bundle is None
+        or v8_current_decision is None
+    ):
+        st.warning("El paquete V8 no está disponible en este conjunto de datos.")
+        st.stop()
+
+    profile_labels = {
+        "Conservador": "conservative",
+        "Equilibrado": "balanced",
+        "Agresivo": "aggressive",
+    }
+    selected_label = st.segmented_control(
+        "Perfil de riesgo",
+        options=list(profile_labels),
+        default="Equilibrado",
+    )
+    selected_profile = profile_labels[selected_label]
+    current = v8_current_decision["profiles"][selected_profile]
+    current_columns = st.columns(5)
+    current_columns[0].metric(
+        "Fecha de la señal",
+        pd.Timestamp(v8_current_decision["as_of"]).strftime("%d/%m/%Y"),
+    )
+    current_columns[1].metric("Exposición propuesta", percentage(current["exposure"]))
+    current_columns[2].metric(
+        "Acción",
+        {"INCREASE": "Aumentar", "REDUCE": "Reducir", "HOLD": "Mantener"}.get(
+            current["action"], current["action"]
+        ),
+    )
+    current_columns[3].metric("Régimen", current["state"].replace("_", " ").title())
+    current_columns[4].metric("Confianza", percentage(current["confidence"]))
+    st.info(current["explanation"])
+    st.caption(
+        "Esta es una salida académica en modo paper trading. No envía órdenes ni constituye "
+        "asesoramiento financiero."
+    )
+
+    agents = v8_current_decision["agents"]
+    st.markdown("### Deliberación del comité")
+    agent_columns = st.columns(4)
+    with agent_columns[0].container(border=True):
+        st.markdown("**Agente de tendencia**")
+        st.metric("Puntuación", percentage(agents["trend"]["score"]))
+        st.caption("Consenso de medias móviles y momentum a varios horizontes.")
+    with agent_columns[1].container(border=True):
+        st.markdown("**Agente de volatilidad**")
+        st.metric(
+            "Volatilidad anual",
+            percentage(agents["volatility"]["annualized_forecast"]),
+        )
+        st.caption("Puede limitar la exposición bajo volatilidad alta o extrema.")
+    with agent_columns[2].container(border=True):
+        st.markdown("**Agente de drawdown**")
+        st.metric("Drawdown 252 sesiones", percentage(agents["drawdown"]["current_252"]))
+        st.caption("Señal consultiva: no veta por sí sola para evitar reaccionar tarde.")
+    with agent_columns[3].container(border=True):
+        st.markdown("**Fuerza relativa**")
+        st.metric("QQQ frente a SPY", percentage(agents["relative_strength"]["qqq_vs_spy_20"]))
+        st.caption("Contextualiza el régimen, sin autoridad directa sobre la operación.")
+
+    st.markdown("### Frontera histórica de rentabilidad y riesgo")
+    selection_metrics = v8_metrics_bundle["subperiods"]["selection"]
+    retrospective_metrics = v8_metrics_bundle["subperiods"]["retrospective"]
+    benchmark_names = {
+        "constant_100": "QQQ Buy & Hold",
+        "volatility_target_35": "Volatility target 35 %",
+    }
+    visible = [selected_profile, "constant_100", "volatility_target_35"]
+    comparison_rows = []
+    for period_name, period_values in (
+        ("Selección 2004–2022", selection_metrics),
+        ("Retrospectivo 2023–2026", retrospective_metrics),
+    ):
+        for name in visible:
+            values = period_values[name]
+            comparison_rows.append(
+                {
+                    "Periodo": period_name,
+                    "Estrategia": (
+                        selected_label if name == selected_profile else benchmark_names[name]
+                    ),
+                    "Rentabilidad anual": values["annualized_return"],
+                    "Volatilidad": values["annualized_volatility"],
+                    "Sharpe": values["sharpe_ratio"],
+                    "Drawdown máximo": values["maximum_drawdown"],
+                    "Exposición media": values["market_exposure"],
+                }
+            )
+    st.dataframe(
+        pd.DataFrame(comparison_rows).style.format(
+            {
+                "Rentabilidad anual": "{:.2%}",
+                "Volatilidad": "{:.2%}",
+                "Sharpe": "{:.3f}",
+                "Drawdown máximo": "{:.2%}",
+                "Exposición media": "{:.0%}",
+            }
+        ),
+        hide_index=True,
+        width="stretch",
+    )
+
+    equity = v8_equity_bundle[
+        [selected_profile, "buy_and_hold", "volatility_target_35"]
+    ].dropna()
+    equity = equity.divide(equity.iloc[0])
+    equity = equity.rename(
+        columns={
+            selected_profile: selected_label,
+            "buy_and_hold": "QQQ Buy & Hold",
+            "volatility_target_35": "Volatility target 35 %",
+        }
+    )
+    equity_long = equity.rename_axis("Fecha").reset_index().melt(
+        id_vars="Fecha", var_name="Estrategia", value_name="Capital"
+    )
+    v8_figure = px.line(
+        equity_long,
+        x="Fecha",
+        y="Capital",
+        color="Estrategia",
+        log_y=True,
+    )
+    v8_figure.update_layout(
+        height=460,
+        hovermode="x unified",
+        legend_orientation="h",
+        margin=dict(l=10, r=10, t=30, b=10),
+    )
+    st.plotly_chart(v8_figure, width="stretch")
+    st.caption("Escala logarítmica y capital rebased a 1 al comienzo de 2004.")
+
+    st.markdown("### Incertidumbre y control del sobreajuste")
+    robustness = v8_metrics_bundle["robustness"]
+    bootstrap = robustness["block_bootstrap"][selected_profile]["selection"][
+        "vs_buy_and_hold"
+    ]
+    dsr = robustness["deflated_sharpe"][selected_profile]
+    pbo = robustness["candidate_family_cscv"]
+    robustness_columns = st.columns(4)
+    robustness_columns[0].metric(
+        "Diferencia anual media", percentage(bootstrap["mean_difference"])
+    )
+    robustness_columns[1].metric(
+        "P(supera QQQ)", percentage(bootstrap["probability_strategy_outperforms"])
+    )
+    robustness_columns[2].metric(
+        "Sharpe deflactado", percentage(dsr["deflated_sharpe_probability"])
+    )
+    robustness_columns[3].metric(
+        "PBO familia", percentage(pbo["probability_of_backtest_overfitting"])
+    )
+    st.caption(
+        "El intervalo bootstrap del perfil puede incluir cero y el PBO no es bajo. La evidencia "
+        "respalda una frontera de riesgo explicable, no una garantía de alpha persistente."
+    )
 
 elif page == "Resultados":
     render_header(
@@ -1185,14 +1367,14 @@ elif page == "Metodología":
     )
     timeline = st.columns(3)
     with timeline[0].container(border=True):
-        st.markdown("**2015–2019 · Entrenamiento inicial**")
-        st.caption("Solo información anterior a cada predicción.")
+        st.markdown("**1999–2003 · Warm-up**")
+        st.caption("Construcción de indicadores; no participa en la comparación.")
     with timeline[1].container(border=True):
-        st.markdown("**2020–2022 · Validación**")
-        st.caption("Walk-forward expansivo y congelación posterior.")
+        st.markdown("**2004–2022 · Selección**")
+        st.caption("Definición de perfiles y evaluación por bloques cronológicos.")
     with timeline[2].container(border=True):
-        st.markdown("**2023–2024 · Test final**")
-        st.caption("Apertura única y resultados sin reajuste.")
+        st.markdown("**2023–ago. 2026 · Retrospectivo**")
+        st.caption("Periodo ya observado; no se presenta como holdout prospectivo.")
 
     st.markdown("### Configuración del coordinador")
     weights = pd.DataFrame(
@@ -1232,10 +1414,10 @@ elif page == "Metodología":
         st.markdown("### Limitaciones")
         st.markdown(
             "- Sin noticias históricas verificadas en esta versión.\n"
-            "- Un único activo y régimen de mercado limitado.\n"
-            "- Sin posiciones cortas ni apalancamiento.\n"
-            "- No se demuestra superioridad frente a los baselines.\n"
-            "- Uso académico; no es un sistema de inversión."
+            "- Decisión centrada en QQQ; no selecciona acciones individuales.\n"
+            "- Exposición sintética: no replica exactamente un ETF apalancado.\n"
+            "- Los intervalos de incertidumbre pueden incluir cero.\n"
+            "- Uso académico y paper trading; no ejecuta capital real."
         )
 
     st.markdown("### Coste y reproducción")

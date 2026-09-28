@@ -1,0 +1,48 @@
+version: "8.0-defensible-framework"
+
+period:
+  selection_start: "2004-01-01"
+  selection_end: "2022-12-31"
+  retrospective_start: "2023-01-01"
+  retrospective_end: "2026-08-31"
+
+signals:
+  moving_average_sessions: [50, 200, 250]
+  momentum_sessions: [20, 60]
+  high_volatility: 0.35
+  severe_volatility: 0.50
+  moderate_drawdown: -0.15
+  severe_drawdown: -0.25
+
+profiles:
+  - name: conservative
+    label: "Conservador"
+    maximum_exposure: 1.15
+    defensive_exposure: 0.70
+    severe_risk_exposure: 0.45
+    volatility_target: null
+    minimum_exposure: 0.45
+  - name: balanced
+    label: "Equilibrado"
+    maximum_exposure: 1.50
+    defensive_exposure: 0.70
+    severe_risk_exposure: 0.50
+    volatility_target: 0.35
+    minimum_exposure: 0.70
+  - name: aggressive
+    label: "Agresivo"
+    maximum_exposure: 1.75
+    defensive_exposure: 0.70
+    severe_risk_exposure: 0.50
+    volatility_target: null
+    minimum_exposure: 0.70
+
+costs:
+  transaction_cost_bps: 10
+  borrowing_spread_bps: 150
+
+robustness:
+  bootstrap_samples: 5000
+  bootstrap_block_sessions: 20
+  candidate_trials: 7
+  random_seed: 42

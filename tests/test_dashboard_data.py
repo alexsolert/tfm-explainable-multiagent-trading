@@ -93,3 +93,10 @@ def test_versioned_demo_bundle_is_self_contained() -> None:
     assert artifacts.v4_metrics["configuration_evaluations"] == 1_660
     assert len(artifacts.v4_decisions) > 2_000
     assert "v4_multiagent" in artifacts.v4_equity
+    assert artifacts.v8_metrics["version"] == "8.0-defensible-framework"
+    assert set(artifacts.v8_current_decision["profiles"]) == {
+        "conservative",
+        "balanced",
+        "aggressive",
+    }
+    assert "balanced" in artifacts.v8_equity

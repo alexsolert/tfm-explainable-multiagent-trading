@@ -62,6 +62,12 @@ evidencia, las limitaciones de comparabilidad y los resultados se documentan en
 [`docs/research/v7-internet-evidence.md`](docs/research/v7-internet-evidence.md) y
 [`research_results/v7`](research_results/v7).
 
+La V8 consolida el proyecto en un framework final con perfiles conservador, equilibrado y
+agresivo, autoridad explícita por agente, controles de exposición equivalente y una salida
+auditable preparada para paper trading. El protocolo se encuentra en
+[`docs/experiments/v8-final-framework-protocol.md`](docs/experiments/v8-final-framework-protocol.md)
+y el paquete compacto de resultados en [`research_results/v8`](research_results/v8).
+
 ## Principios de diseno
 
 - Separacion entre datos, agentes, coordinacion, backtesting, explicabilidad e interfaz.
