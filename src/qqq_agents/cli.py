@@ -930,6 +930,14 @@ def _v5_shadow(config_path: Path, v5_config_path: Path, through: str) -> None:
             "volatility_5": str(row["volatility_model_5"]),
             "volatility_20": str(row["volatility_model_20"]),
         },
+        "policy_candidates": {
+            policy: {
+                "role": "champion" if policy == result.selected_policy else "challenger",
+                "desired_qqq_exposure": float(detail.iloc[-1]["desired_position"]),
+                "policy_state": str(detail.iloc[-1]["policy_state"]),
+            }
+            for policy, detail in result.policy_details.items()
+        },
         "prospective_outcomes_used_for_tuning": False,
     }
     output = Path("artifacts/v5_shadow/signals")
