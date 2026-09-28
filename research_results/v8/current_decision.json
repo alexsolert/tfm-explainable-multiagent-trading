@@ -27,7 +27,7 @@
       "exposure": 1.15,
       "action": "HOLD",
       "state": "GROWTH",
-      "confidence": 0.8,
+      "signal_strength": 0.8,
       "explanation": "Estado GROWTH; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 115%."
     },
     "balanced": {
@@ -35,7 +35,7 @@
       "exposure": 1.5,
       "action": "HOLD",
       "state": "VOLATILITY_MANAGED",
-      "confidence": 0.8,
+      "signal_strength": 0.8,
       "explanation": "Estado VOLATILITY_MANAGED; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 150%."
     },
     "aggressive": {
@@ -43,7 +43,7 @@
       "exposure": 1.75,
       "action": "HOLD",
       "state": "GROWTH",
-      "confidence": 0.8,
+      "signal_strength": 0.8,
       "explanation": "Estado GROWTH; tendencia 80%; volatilidad anualizada 18.4%; drawdown a 252 sesiones -3.9%; exposici\u00f3n propuesta 175%."
     }
   },

@@ -462,7 +462,9 @@ elif page == "V8 final":
         ),
     )
     current_columns[3].metric("Régimen", current["state"].replace("_", " ").title())
-    current_columns[4].metric("Confianza", percentage(current["confidence"]))
+    current_columns[4].metric(
+        "Fuerza de señal", percentage(current["signal_strength"])
+    )
     st.info(current["explanation"])
     st.caption(
         "Esta es una salida académica en modo paper trading. No envía órdenes ni constituye "

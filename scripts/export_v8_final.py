@@ -153,7 +153,7 @@ def main() -> None:
                 "exposure": latest[f"{profile.name}_desired_position"],
                 "action": latest[f"{profile.name}_action"],
                 "state": latest[f"{profile.name}_policy_state"],
-                "confidence": latest[f"{profile.name}_confidence"],
+                "signal_strength": latest[f"{profile.name}_signal_strength"],
                 "explanation": latest[f"{profile.name}_explanation"],
             }
             for profile in config.profiles

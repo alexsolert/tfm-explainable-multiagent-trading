@@ -48,7 +48,7 @@ def coordinate_profile(
             target = profile.maximum_exposure
             state = "GROWTH"
         target = float(np.clip(target, 0, profile.maximum_exposure))
-        confidence = float(
+        signal_strength = float(
             np.clip(
                 0.5
                 + 0.5 * abs(trend - 0.5) * 2
@@ -64,7 +64,7 @@ def coordinate_profile(
                 "profile_label": profile.label,
                 "desired_position": target,
                 "policy_state": state,
-                "confidence": confidence,
+                "signal_strength": signal_strength,
                 "explanation": _explanation(row, state, target),
             }
         )

@@ -30,4 +30,4 @@ La robustez incluye costes y financiación, bloques cronológicos, crisis financ
 
 ## Criterio de uso futuro
 
-La salida actual contiene fecha, señales de los agentes, puntuación del comité, exposición por perfil, acción respecto a la decisión previa, confianza y explicación. Este contrato permite conectar en el futuro una fuente de datos programada y un adaptador de broker en modo paper. La ejecución con capital real requeriría validación prospectiva, monitorización de desviaciones, límites operativos y revisión regulatoria adicionales.
+La salida actual contiene fecha, señales de los agentes, puntuación del comité, exposición por perfil, acción respecto a la decisión previa, fuerza de señal y explicación. La fuerza de señal resume la separación respecto al umbral de tendencia; no es una probabilidad calibrada de acierto. Este contrato permite conectar en el futuro una fuente de datos programada y un adaptador de broker en modo paper. La ejecución con capital real requeriría validación prospectiva, monitorización de desviaciones, límites operativos y revisión regulatoria adicionales.
